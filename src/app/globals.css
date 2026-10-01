@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  --color-gold: #B8923A;
+  --color-gold-light: #D4AF37;
+  --color-gold-dark: #8A6A23;
+  --color-alert-red: #C8102E;
+  --color-amber: #2A1810;
+  --color-grey: #666666;
+  --color-grey-light: #F5F5F5;
+}
+
+body {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  font-family: var(--font-jost), 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.trust-badge-cash-on-delivery {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-gold-dark);
+}
