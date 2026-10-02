@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       paymentProvider, // PAYSTACK or CASH_ON_DELIVERY
       otp,
       discountCode,
-      items, // Array of { variantId, quantity }
+      items, // Array of { variantId (UUID or SKU), quantity }
     } = body;
 
     if (!customerName || !customerPhone || !region || !city || !addressLine || !items || !items.length) {
@@ -49,8 +49,14 @@ export async function POST(request: Request) {
     }[] = [];
 
     for (const item of items) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: item.variantId },
+      // Find variant by either UUID id or SKU code
+      const variant = await prisma.productVariant.findFirst({
+        where: {
+          OR: [
+            { id: item.variantId },
+            { sku: item.variantId },
+          ],
+        },
       });
 
       if (!variant || variant.stock < item.quantity) {
@@ -96,11 +102,11 @@ export async function POST(request: Request) {
 
     // Atomically create order & reserve stock
     const order = await prisma.$transaction(async (tx) => {
-      // Decrement stock for variants
-      for (const item of items) {
+      // Decrement stock for resolved variants
+      for (const itemData of orderItemsData) {
         await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { decrement: item.quantity } },
+          where: { id: itemData.variantId },
+          data: { stock: { decrement: itemData.quantity } },
         });
       }
 

@@ -1,105 +1,93 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, Crown, Menu, X, ShieldCheck } from "lucide-react";
+import { Search, ShoppingBag } from "lucide-react";
+import { getCart } from "@/lib/cart";
 
-export function Header({ cartCount = 0 }: { cartCount?: number }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export const Header: React.FC = () => {
+  const [cartCount, setCartCount] = useState(0);
 
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Men", href: "/collections/men" },
-    { name: "Women", href: "/collections/women" },
-    { name: "Unisex", href: "/collections/unisex" },
-    { name: "Makeup", href: "/collections/makeup" },
-    { name: "RYZ Parfums", href: "/collections/ryz-parfums" },
-    { name: "Sample Sets", href: "/collections/sample-sets" },
-  ];
+  useEffect(() => {
+    const updateCount = () => {
+      const cart = getCart();
+      const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(total);
+    };
+
+    updateCount();
+    window.addEventListener("cart_updated", updateCount);
+    return () => window.removeEventListener("cart_updated", updateCount);
+  }, []);
 
   return (
-    <header className="bg-white border-b border-neutral-200 sticky top-0 z-50">
+    <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden text-black p-1 focus:outline-none"
-          aria-label="Toggle navigation menu"
-        >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Left: Divider line & Navigation */}
+        <div className="flex items-center gap-6">
+          <div className="hidden lg:block h-8 w-[1px] bg-neutral-200" />
+          <nav className="hidden md:flex items-center gap-4 text-[11px] font-bold uppercase tracking-widest text-neutral-800">
+            <Link href="/" className="hover:text-brand-gold transition-colors">
+              Home
+            </Link>
+            <span className="text-neutral-300">|</span>
+            <Link href="/collections/men" className="hover:text-brand-gold transition-colors">
+              Men
+            </Link>
+            <span className="text-neutral-300">|</span>
+            <Link href="/collections/women" className="hover:text-brand-gold transition-colors">
+              Women
+            </Link>
+            <span className="text-neutral-300">|</span>
+            <Link href="/collections/ryz-parfums" className="hover:text-brand-gold transition-colors">
+              RYZ Parfums
+            </Link>
+            <span className="text-neutral-300">|</span>
+            <Link href="/tracking" className="hover:text-brand-gold transition-colors">
+              Track Order
+            </Link>
+          </nav>
+        </div>
 
-        <div className="hidden md:block w-px h-10 bg-neutral-200" />
-
+        {/* Center: RYZ Parfums Gold Logo */}
         <Link href="/" className="flex flex-col items-center group">
-          <Crown size={22} className="text-brand-gold mb-1 group-hover:scale-105 transition-transform" />
-          <span className="text-2xl md:text-3xl font-extrabold tracking-[0.25em] text-black">
+          {/* Gold Crown Symbol */}
+          <div className="text-brand-gold text-lg tracking-widest leading-none mb-0.5">
+            👑
+          </div>
+          <span className="text-2xl font-black tracking-[0.3em] text-brand-gold font-sans leading-tight">
             RYZ
           </span>
-          <span className="text-[10px] tracking-[0.4em] text-neutral-600 font-medium -mt-1">
+          <span className="text-[9px] font-bold tracking-[0.4em] text-neutral-800 uppercase">
             P A R F U M S
           </span>
         </Link>
 
-        <div className="hidden md:block w-px h-10 bg-neutral-200" />
-
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 bg-neutral-100 border border-brand-gold/30 px-3 py-1.5 text-xs font-bold tracking-wider text-brand-gold-dark rounded-none">
-            <ShieldCheck size={16} className="text-brand-gold" />
-            <span>CASH ON DELIVERY ACCEPTED</span>
+        {/* Right: Shopping Cart Icon & COD Trust Message */}
+        <div className="flex items-center gap-6">
+          {/* Trust Message Badge */}
+          <div className="hidden xl:flex flex-col text-right">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-black bg-neutral-100 px-2.5 py-1 border border-neutral-300/80">
+              CASH ON DELIVERY ACCEPTED
+            </span>
           </div>
 
-          <Link
-            href="/cart"
-            className="relative p-2 text-black hover:text-brand-gold transition-colors flex items-center"
-            aria-label={`Shopping bag with ${cartCount} items`}
-          >
-            <ShoppingBag size={24} strokeWidth={1.5} />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </div>
-
-      <div className="sm:hidden bg-neutral-900 text-white py-1.5 text-center text-[11px] font-bold tracking-widest flex items-center justify-center gap-1">
-        <ShieldCheck size={14} className="text-brand-gold" />
-        <span>CASH ON DELIVERY ACCEPTED NATIONWIDE</span>
-      </div>
-
-      <nav className="hidden md:flex justify-center items-center py-2 border-t border-neutral-100 bg-neutral-50/50 text-xs font-semibold uppercase tracking-widest">
-        <div className="flex items-center space-x-6">
-          {navLinks.map((link, idx) => (
-            <React.Fragment key={link.name}>
-              <Link
-                href={link.href}
-                className="hover:text-brand-gold transition-colors text-black"
-              >
-                {link.name}
-              </Link>
-              {idx < navLinks.length - 1 && (
-                <span className="text-neutral-300 font-light">|</span>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </nav>
-
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-neutral-200 px-4 py-4 space-y-3 uppercase text-xs tracking-widest font-semibold">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-1.5 border-b border-neutral-100 text-black hover:text-brand-gold"
-            >
-              {link.name}
+          <div className="flex items-center gap-4">
+            <Link href="/search" aria-label="Search Catalog" className="text-neutral-800 hover:text-brand-gold transition-colors">
+              <Search size={20} />
             </Link>
-          ))}
+
+            <Link href="/cart" className="relative text-neutral-800 hover:text-brand-gold transition-colors p-1" aria-label="View Shopping Cart">
+              <ShoppingBag size={22} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
-      )}
+      </div>
     </header>
   );
-}
+};

@@ -4,15 +4,14 @@ import { StorefrontLayoutShell } from "@/components/layout/StorefrontLayoutShell
 import { ProductDetailView } from "@/components/product/ProductDetailView";
 import { prisma } from "@/lib/prisma";
 
-interface ProductPageProps {
+export default async function ProductDetailPage({
+  params,
+}: {
   params: Promise<{ slug: string }>;
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params;
-
+}) {
+  const resolvedParams = await params;
   const product = await prisma.product.findUnique({
-    where: { slug },
+    where: { slug: resolvedParams.slug },
     include: {
       variants: true,
     },
@@ -22,41 +21,44 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const globalConfig = await prisma.inspiredByConfig.findUnique({
-    where: { id: "global" },
-  });
+  const defaultImage =
+    "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&auto=format&fit=crop&q=80";
 
-  const showInspiredBy =
-    (globalConfig?.globalEnabled ?? true) &&
-    product.inspiredEnabled &&
-    Boolean(product.inspiredHouse) &&
-    Boolean(product.inspiredName);
+  const parseNotes = (notesStr: string | null) => {
+    if (!notesStr) return [];
+    try {
+      return JSON.parse(notesStr);
+    } catch {
+      return notesStr.split(",").map((s) => s.trim());
+    }
+  };
 
   const formattedProduct = {
     id: product.id,
     slug: product.slug,
     title: product.title,
     description: product.description,
-    category: product.category,
     concentration: product.concentration,
-    topNotes: product.topNotes.split(",").map((n) => n.trim()),
-    heartNotes: product.heartNotes.split(",").map((n) => n.trim()),
-    baseNotes: product.baseNotes.split(",").map((n) => n.trim()),
+    topNotes: parseNotes(product.topNotes),
+    heartNotes: parseNotes(product.heartNotes),
+    baseNotes: parseNotes(product.baseNotes),
     longevityRating: product.longevityRating,
     sillageRating: product.sillageRating,
-    inspiredBy: showInspiredBy
+    showInspiredBy: true,
+    images: [defaultImage],
+    inspiredBy: product.inspiredHouse
       ? {
-          house: product.inspiredHouse!,
-          name: product.inspiredName!,
-          labelOverride: globalConfig?.labelOverride || "INSPIRED BY",
+          house: product.inspiredHouse,
+          name: product.inspiredName || "",
+          imageUrl: product.inspiredImgUrl || undefined,
         }
       : undefined,
     variants: product.variants.map((v) => ({
       id: v.id,
-      sku: v.sku,
       size: v.size,
       pricePesewas: v.pricePesewas,
       stock: v.stock,
+      sku: v.sku,
     })),
   };
 

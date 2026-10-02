@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { StorefrontLayoutShell } from "@/components/layout/StorefrontLayoutShell";
 import { ShieldCheck, CreditCard, Truck, Smartphone } from "lucide-react";
+import { getCart, clearCart, CartItem } from "@/lib/cart";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -22,6 +24,26 @@ export default function CheckoutPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpInput, setOtpInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const items = getCart();
+    if (items.length > 0) {
+      setCartItems(items);
+    } else {
+      // Fallback default sample item if checkout is loaded directly
+      setCartItems([
+        {
+          variantId: "RYZ-RO-100ML",
+          productId: "prod_royal_oud",
+          productName: "Royal Oud",
+          size: "100ml",
+          pricePesewas: 34900,
+          imageUrl: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&auto=format&fit=crop&q=80",
+          quantity: 1,
+        },
+      ]);
+    }
+  }, []);
 
   const handleSendOtp = async () => {
     if (!formData.customerPhone) {
@@ -57,12 +79,16 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           ...formData,
           otp: otpInput,
-          items: [{ variantId: "RYZ-RO-100ML", quantity: 1 }],
+          items: cartItems.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
         }),
       });
 
       const data = await res.json();
       if (data.success) {
+        clearCart();
         if (data.authorizationUrl) {
           window.location.href = data.authorizationUrl;
         } else {
@@ -77,6 +103,11 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  const itemsTotalPesewas = cartItems.reduce(
+    (sum, item) => sum + item.pricePesewas * item.quantity,
+    0
+  );
 
   return (
     <StorefrontLayoutShell>
@@ -259,6 +290,20 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+
+              <div className="border-t border-neutral-200 pt-4 space-y-2">
+                <div className="text-xs font-bold uppercase text-neutral-700">Order Items</div>
+                {cartItems.map((item) => (
+                  <div key={item.variantId} className="flex justify-between text-xs text-neutral-600">
+                    <span>
+                      {item.productName} ({item.size}) x {item.quantity}
+                    </span>
+                    <span className="font-bold text-black">
+                      GHS {((item.pricePesewas * item.quantity) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3 border-t border-neutral-200 pt-4">
@@ -272,7 +317,7 @@ export default function CheckoutPage() {
                 type="submit"
                 className="w-full bg-black text-white py-3.5 px-6 text-xs font-bold uppercase tracking-widest hover:bg-brand-gold hover:text-black transition-all shadow-lg"
               >
-                {isSubmitting ? "Processing..." : "Confirm & Place Order"}
+                {isSubmitting ? "Processing..." : `Confirm & Place Order (GHS ${(itemsTotalPesewas / 100).toFixed(2)})`}
               </button>
             </div>
           </div>

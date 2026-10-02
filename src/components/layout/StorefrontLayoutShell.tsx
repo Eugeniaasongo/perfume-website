@@ -1,59 +1,71 @@
 import React from "react";
-import { UtilityBar } from "@/components/layout/UtilityBar";
-import { Header } from "@/components/layout/Header";
+import { UtilityBar } from "./UtilityBar";
+import { Header } from "./Header";
 
-export function StorefrontLayoutShell({ children }: { children: React.ReactNode }) {
+export const StorefrontLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-white text-black">
       <UtilityBar />
-      <Header cartCount={0} />
+      <Header />
       <main className="flex-1">{children}</main>
       <footer className="bg-black text-white pt-12 pb-6 border-t border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div>
-            <span className="text-xl font-extrabold tracking-[0.2em] text-brand-gold block mb-2">
-              RYZ PARFUMS
-            </span>
-            <p className="text-neutral-400 text-xs leading-relaxed">
-              Ghanaian-owned luxury fragrance house. Crafted with high oil concentration for enduring elegance.
+            <div className="flex items-center gap-2 text-brand-gold text-lg font-bold mb-3">
+              <span>👑</span> RYZ PARFUMS
+            </div>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Ghanaian-owned luxury fragrance house. Crafted with premium oils, long-lasting formulation, and signature elegance.
             </p>
           </div>
+
           <div>
-            <h3 className="text-xs font-bold tracking-widest uppercase mb-4 text-brand-gold">
-              Quick Links
-            </h3>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-gold mb-4">
+              Fragrance Collections
+            </h4>
             <ul className="space-y-2 text-xs text-neutral-300">
-              <li><a href="/collections/men" className="hover:text-brand-gold">Men&apos;s Collection</a></li>
-              <li><a href="/collections/women" className="hover:text-brand-gold">Women&apos;s Collection</a></li>
-              <li><a href="/collections/unisex" className="hover:text-brand-gold">Unisex Scents</a></li>
-              <li><a href="/collections/ryz-parfums" className="hover:text-brand-gold">House Collection</a></li>
+              <li><a href="/collections/men" className="hover:text-brand-gold">Men's Fragrances</a></li>
+              <li><a href="/collections/women" className="hover:text-brand-gold">Women's Fragrances</a></li>
+              <li><a href="/collections/unisex" className="hover:text-brand-gold">Unisex Niche Scents</a></li>
+              <li><a href="/collections/ryz-parfums" className="hover:text-brand-gold">RYZ Parfums Signature</a></li>
             </ul>
           </div>
+
           <div>
-            <h3 className="text-xs font-bold tracking-widest uppercase mb-4 text-brand-gold">
-              Customer Care
-            </h3>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-gold mb-4">
+              Customer Support
+            </h4>
             <ul className="space-y-2 text-xs text-neutral-300">
-              <li><a href="/tracking" className="hover:text-brand-gold">Track Your Order</a></li>
-              <li><a href="/terms" className="hover:text-brand-gold">Terms & Conditions</a></li>
+              <li><a href="/tracking" className="hover:text-brand-gold">Track Order</a></li>
+              <li><a href="/terms" className="hover:text-brand-gold">Shipping & Delivery</a></li>
+              <li><a href="/terms" className="hover:text-brand-gold">Return Policy (Opened Fragrances)</a></li>
+              <li><a href="/terms" className="hover:text-brand-gold">Cash on Delivery Terms</a></li>
             </ul>
           </div>
+
           <div>
-            <h3 className="text-xs font-bold tracking-widest uppercase mb-4 text-brand-gold">
-              Accepted Payments
-            </h3>
-            <p className="text-xs text-neutral-400 mb-2 font-semibold">
-              • Cash on Delivery (Nationwide)
-            </p>
-            <p className="text-xs text-neutral-400">
-              • MTN MoMo, Telecel Cash, AirtelTigo Money & Cards via Paystack
-            </p>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-gold mb-4">
+              Legal & Compliance
+            </h4>
+            <ul className="space-y-2 text-xs text-neutral-300">
+              <li><a href="/terms" className="hover:text-brand-gold">Terms of Service</a></li>
+              <li><a href="/terms" className="hover:text-brand-gold">Privacy Policy (Act 843)</a></li>
+              <li><a href="/admin" className="hover:text-brand-gold">Admin Portal</a></li>
+            </ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 pt-6 border-t border-neutral-800 text-center text-xs text-neutral-500">
-          © {new Date().getFullYear()} RYZ Parfums. All Rights Reserved. Ghanaian Craftsmanship.
+
+        <div className="max-w-7xl mx-auto px-4 border-t border-neutral-800 pt-6 flex flex-col md:flex-row justify-between items-center text-[10px] text-neutral-500 gap-4">
+          <p>© {new Date().getFullYear()} RYZ Parfums. All Rights Reserved.</p>
+          <div className="flex items-center gap-4 text-neutral-400">
+            <span>Paystack Secured</span>
+            <span>•</span>
+            <span>Cash on Delivery Verified</span>
+            <span>•</span>
+            <span>Ghana Post GPS Supported</span>
+          </div>
         </div>
       </footer>
     </div>
   );
-}
+};
