@@ -1,32 +1,17 @@
 import { prisma } from "@/lib/prisma";
 
-export interface ShippingAddressInput {
-  region: string;
-  city: string;
-}
+export { calculateShippingFeePesewas } from "@/lib/shipping";
 
 export interface DiscountApplyInput {
   code: string;
   itemsPricePesewas: number;
 }
 
-export function calculateShippingFeePesewas(region: string, itemsPricePesewas: number): number {
-  if (itemsPricePesewas >= 50000) {
-    return 0;
-  }
+export type DiscountResult =
+  | { valid: true; code: string; discountPesewas: number; message: string }
+  | { valid: false; message: string; discountPesewas: 0 };
 
-  const normalizedRegion = region.trim().toLowerCase();
-
-  if (normalizedRegion === "accra") {
-    return 2000;
-  } else if (normalizedRegion.includes("greater accra")) {
-    return 3000;
-  } else {
-    return 4500;
-  }
-}
-
-export async function validateAndApplyDiscount(input: DiscountApplyInput) {
+export async function validateAndApplyDiscount(input: DiscountApplyInput): Promise<DiscountResult> {
   const discount = await prisma.discountCode.findUnique({
     where: { code: input.code.toUpperCase().trim() },
   });

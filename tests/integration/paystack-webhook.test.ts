@@ -1,77 +1,71 @@
+import { after, test } from "node:test";
+import assert from "node:assert/strict";
 import crypto from "crypto";
-import { processPaystackWebhookEvent } from "../../src/lib/payments/paystack";
-import { prisma } from "../../src/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { processPaystackWebhookEvent, WebhookSignatureError } from "@/lib/payments/paystack";
+import { createOrder } from "@/lib/orders/checkout";
+import { baseCheckout, createTestProduct, testPhone, uniqueSuffix, cleanupTestData } from "../helpers";
 
-async function testPaystackWebhook() {
-  console.log("Testing Paystack Webhook Integration & Idempotency...");
+const SECRET = "sk_test_webhook_secret";
+process.env.PAYSTACK_SECRET_KEY = SECRET;
 
-  const secretKey = "sk_test_mock_paystack_secret_key";
-  process.env.PAYSTACK_SECRET_KEY = secretKey;
+after(async () => {
+  await cleanupTestData();
+  await prisma.$disconnect();
+});
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: `TEST-ORD-${Date.now()}`,
-      status: "PENDING_PAYMENT",
-      paymentProvider: "PAYSTACK",
-      customerName: "Kofi Mensah",
-      customerEmail: "kofi@example.com",
-      customerPhone: "+233201234567",
-      region: "Accra",
-      city: "East Legon",
-      addressLine: "12 Palm Street",
-      itemsPrice: 29900,
-      shippingPrice: 2000,
-      discountPrice: 0,
-      totalPrice: 31900,
-    },
-  });
-
-  const payload = {
-    event: "charge.success",
-    data: {
-      reference: `PAY-REF-${Date.now()}`,
-      amount: 31900,
-      metadata: {
-        orderId: order.id,
-      },
-    },
-  };
-
-  const rawBody = JSON.stringify(payload);
-  const validSignature = crypto
-    .createHmac("sha512", secretKey)
-    .update(rawBody)
-    .digest("hex");
-
-  try {
-    await processPaystackWebhookEvent(rawBody, "invalid_signature");
-    throw new Error("Failed: Invalid signature was accepted!");
-  } catch (e: any) {
-    if (!e.message.includes("Invalid Paystack HMAC signature")) throw e;
-    console.log("Passed 1: Invalid signature correctly rejected.");
-  }
-
-  const result1 = await processPaystackWebhookEvent(rawBody, validSignature);
-  if (result1.status !== "success") {
-    throw new Error(`Failed: Webhook expected success, got ${result1.status}`);
-  }
-
-  const updatedOrder = await prisma.order.findUnique({ where: { id: order.id } });
-  if (updatedOrder?.status !== "PAID") {
-    throw new Error(`Failed: Order status expected PAID, got ${updatedOrder?.status}`);
-  }
-  console.log("Passed 2: Valid webhook processed and order marked PAID.");
-
-  const result2 = await processPaystackWebhookEvent(rawBody, validSignature);
-  if (result2.status !== "already_processed") {
-    throw new Error(`Failed: Duplicate webhook expected already_processed, got ${result2.status}`);
-  }
-  console.log("Passed 3: Duplicate webhook safely handled via idempotency check.");
-
-  console.log("ALL PAYSTACK WEBHOOK TESTS PASSED!");
+function sign(body: string) {
+  return crypto.createHmac("sha512", SECRET).update(body).digest("hex");
 }
 
-testPaystackWebhook().catch((e) => {
-  console.error("Paystack webhook test failed:", e);
-  process.exit(1);
+async function pendingOrder() {
+  const product = await createTestProduct(5);
+  return createOrder({
+    ...baseCheckout,
+    customerPhone: testPhone(),
+    customerEmail: "kofi@example.com",
+    paymentProvider: "PAYSTACK",
+    items: [{ variantId: product.variants[0].id, quantity: 1 }],
+    isCodOtpVerified: false,
+  });
+}
+
+function chargeEvent(orderId: string, amount: number) {
+  return JSON.stringify({
+    event: "charge.success",
+    data: { reference: `REF-${uniqueSuffix()}`, amount, currency: "GHS", metadata: { orderId } },
+  });
+}
+
+test("rejects invalid signatures", async () => {
+  const body = chargeEvent("x", 100);
+  await assert.rejects(processPaystackWebhookEvent(body, "deadbeef"), WebhookSignatureError);
+});
+
+test("marks the order paid exactly once", async () => {
+  const order = await pendingOrder();
+  const body = chargeEvent(order.id, order.totalPrice);
+
+  const first = await processPaystackWebhookEvent(body, sign(body));
+  assert.equal(first.status, "success");
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PAID");
+
+  const replay = await processPaystackWebhookEvent(body, sign(body));
+  assert.equal(replay.status, "already_processed");
+  assert.equal(await prisma.paymentLedger.count({ where: { orderId: order.id } }), 1);
+});
+
+test("holds orders when the paid amount doesn't match", async () => {
+  const order = await pendingOrder();
+  const body = chargeEvent(order.id, order.totalPrice - 100);
+
+  const result = await processPaystackWebhookEvent(body, sign(body));
+  assert.equal(result.status, "needs_review");
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "ON_HOLD");
+});
+
+test("ignores non-charge events", async () => {
+  const body = JSON.stringify({ event: "transfer.success", data: {} });
+  const result = await processPaystackWebhookEvent(body, sign(body));
+  assert.equal(result.status, "ignored");
 });

@@ -1,17 +1,25 @@
-# RYZ Parfums Go-Live & Legal Risk Assessment Checklist
+# RYZ Parfums Go-Live Checklist
 
-## 1. Third-Party Brand & Legal Risk Assessment
-- [x] **Trademark Comparative Phrasing Review**: Ensure all product listings featuring inspired scents use comparative phrasing (e.g. "INSPIRED BY Creed Aventus") and explicit disclaimers clarifying that RYZ Parfums has no affiliation with third-party trademark owners.
-- [x] **No Third-Party Bottle Imagery**: Ensure only proprietary RYZ clear glass bottles and custom box designs are used in commercial photography.
-- [x] **Runtime Inspired-By Toggle**: Verified that admin toggle controls can instantly hide comparative labels or inspiration tags globally without requiring code redeployment.
+## Configuration
+- [ ] Production PostgreSQL provisioned; `DATABASE_URL` set
+- [ ] `NEXT_PUBLIC_SITE_URL` set to the live domain
+- [ ] Strong `ADMIN_PASSWORD` and random `SESSION_SECRET` (32+ chars)
+- [ ] `PAYSTACK_SECRET_KEY` (live key) set; webhook URL registered in Paystack
+- [ ] `ARKESEL_API_KEY` and an approved `SMS_SENDER_ID` set (Cash on Delivery is unavailable without them)
+- [ ] `CRON_SECRET` set
+- [ ] Real support phone, email and WhatsApp numbers set (`NEXT_PUBLIC_SUPPORT_*`, `NEXT_PUBLIC_WHATSAPP_NUMBER`)
+- [ ] Product prices and stock reviewed in `/admin/products`; seed/test discount codes removed or adjusted
 
-## 2. Payments & Financial Integrity Checklist
-- [x] All monetary calculations strictly performed in integer pesewas (never float).
-- [x] Paystack webhook `x-paystack-signature` HMAC sha512 verification active.
-- [x] Webhook idempotency enforced via `PaymentLedger` unique reference constraints.
-- [x] COD phone OTP verification active to eliminate ghost orders.
-- [x] COD rider cash collection logged in `CodReconciliationLog` with automatic discrepancy flagging.
+## Verified in code
+- [x] Money stored and computed in integer pesewas; totals always recomputed on the server
+- [x] Atomic stock reservation; stock returned on cancellation, failed payment and returns
+- [x] Paystack webhook HMAC (constant-time), idempotent ledger, amount check
+- [x] Phone OTP: hashed, 10-minute expiry, single use, 5 attempts, resend throttling
+- [x] Admin portal and admin APIs require a signed session
+- [x] Order lookups require the matching phone number
+- [x] "Inspired by" labels can be switched off globally at runtime from `/admin/settings`
 
-## 3. Ghana Data Protection Act, 2012 (Act 843)
-- [x] Clear terms and privacy statements provided.
-- [x] Minimal customer PII collection required for fulfillment.
+## Legal
+- [ ] Trademark review of comparative "Inspired by" wording
+- [ ] Only proprietary RYZ photography uploaded
+- [ ] Privacy notice reviewed against the Data Protection Act, 2012 (Act 843)

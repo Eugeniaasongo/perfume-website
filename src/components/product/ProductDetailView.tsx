@@ -1,270 +1,227 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { Heart, ShoppingBag, ShieldCheck, Check } from "lucide-react";
-import { addToCart } from "@/lib/cart";
+import { useState } from "react";
+import Link from "next/link";
+import { Check, Minus, Plus, ShieldCheck, Truck, MessageCircle } from "lucide-react";
+import { BottleArt } from "@/components/ui/BottleArt";
+import { showToast } from "@/components/ui/Toaster";
+import { addToCart, MAX_QUANTITY_PER_LINE } from "@/lib/cart";
+import { formatGhs } from "@/lib/format";
+import { whatsappLink } from "@/lib/site";
+import type { ProductDetail } from "@/lib/services/catalog";
 
-export interface ProductDetailProps {
-  product: {
-    id: string;
-    title: string;
-    slug: string;
-    description: string;
-    concentration: string;
-    topNotes: string[];
-    heartNotes: string[];
-    baseNotes: string[];
-    longevityRating: number; // 1 to 5
-    sillageRating: number; // 1 to 5
-    showInspiredBy: boolean;
-    inspiredBy?: {
-      house: string;
-      name: string;
-      imageUrl?: string;
-    };
-    images: string[];
-    variants: {
-      id: string;
-      size: string;
-      pricePesewas: number;
-      stock: number;
-      sku: string;
-    }[];
-  };
+const LONGEVITY = ["", "2–4 hours", "4–6 hours", "6–8 hours", "8–12 hours", "12+ hours"];
+const SILLAGE = ["", "Intimate", "Soft", "Moderate", "Strong", "Room-filling"];
+
+function Meter({ label, value, caption }: { label: string; value: number; caption: string }) {
+  return (
+    <div>
+      <div className="mb-2 flex justify-between text-xs">
+        <span className="uppercase tracking-label text-ink">{label}</span>
+        <span className="text-stone">{caption}</span>
+      </div>
+      <div className="grid grid-cols-5 gap-1" aria-label={`${label}: ${value} out of 5`}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span key={n} className={`h-1 ${n <= value ? "bg-brand-gold" : "bg-line"}`} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-export const ProductDetailView: React.FC<ProductDetailProps> = ({ product }) => {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+export function ProductDetailView({ product }: { product: ProductDetail }) {
+  const firstInStock = Math.max(0, product.variants.findIndex((v) => v.stock > 0));
+  const [variantIndex, setVariantIndex] = useState(firstInStock);
   const [quantity, setQuantity] = useState(1);
-  const [addedSuccess, setAddedSuccess] = useState(false);
+  const [added, setAdded] = useState(false);
 
-  const activeVariant = product.variants[selectedVariantIndex] || product.variants[0];
-  const activeImage = product.images[selectedImageIndex] || product.images[0];
-  const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : true;
+  const variant = product.variants[variantIndex];
+  const isOutOfStock = !variant || variant.stock <= 0;
+  const maxQty = variant ? Math.min(MAX_QUANTITY_PER_LINE, variant.stock) : 1;
 
   const handleAddToCart = () => {
-    if (isOutOfStock || !activeVariant) return;
-
+    if (isOutOfStock) return;
     addToCart({
-      variantId: activeVariant.id,
+      variantId: variant.id,
       productId: product.id,
+      slug: product.slug,
       productName: product.title,
-      size: activeVariant.size,
-      pricePesewas: activeVariant.pricePesewas,
-      imageUrl: product.images[0],
+      size: variant.size,
+      pricePesewas: variant.pricePesewas,
+      imageUrl: product.imageUrl,
       quantity,
     });
-
-    setAddedSuccess(true);
-    setTimeout(() => setAddedSuccess(false), 2500);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+    showToast({
+      title: "Added to your bag",
+      description: `${product.title} · ${variant.size} × ${quantity}`,
+      href: "/cart",
+      hrefLabel: "View bag",
+    });
   };
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello RYZ Parfums, I have a question about ${product.title} (${activeVariant?.size || "100ml"}).`
-  );
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Gallery Column */}
-        <div className="space-y-4">
-          <div className="relative aspect-square w-full bg-neutral-50 border border-neutral-200 overflow-hidden">
-            <Image
-              src={activeImage}
-              alt={product.title}
-              fill
-              className="object-contain p-6"
-              priority
-            />
-          </div>
+    <div className="container-page py-8 lg:py-12">
+      <nav aria-label="Breadcrumb" className="mb-6 text-xs text-stone">
+        <Link href="/" className="hover:text-ink">Home</Link>
+        <span className="mx-2">/</span>
+        <Link href={`/collections/${product.category.toLowerCase()}`} className="hover:text-ink">
+          {product.category}
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-ink">{product.title}</span>
+      </nav>
 
-          {/* Thumbnails */}
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {product.images.map((img, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedImageIndex(idx)}
-                className={`relative w-20 h-20 bg-neutral-50 border flex-shrink-0 transition-all ${
-                  selectedImageIndex === idx ? "border-brand-gold ring-1 ring-brand-gold" : "border-neutral-200"
-                }`}
-              >
-                <Image src={img} alt="Thumbnail" fill className="object-contain p-1" />
-              </button>
-            ))}
-          </div>
+      <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div className="relative aspect-square overflow-hidden bg-sand lg:sticky lg:top-24 lg:aspect-[4/5] lg:self-start">
+          <BottleArt
+            title={product.title}
+            slug={product.slug}
+            category={product.category}
+            concentration={product.concentration}
+            imageUrl={product.imageUrl}
+            size="lg"
+            priority
+          />
         </div>
 
-        {/* Product Meta Column */}
-        <div className="space-y-6">
-          <div>
-            {/* Inspired By Panel */}
-            {product.showInspiredBy && product.inspiredBy && (
-              <div className="mb-3 inline-block bg-neutral-50 border border-neutral-200 p-2 px-3">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-alert-red block">
-                  INSPIRED BY
+        <div className="space-y-8">
+          <div className="space-y-3">
+            {product.inspiredBy && (
+              <p className="text-xs">
+                <span className="inspired-label">{product.inspiredBy.label}</span>{" "}
+                <span className="uppercase tracking-wide text-ink">
+                  {product.inspiredBy.house} — {product.inspiredBy.name}
                 </span>
-                <span className="text-xs font-bold uppercase text-black">
-                  {product.inspiredBy.house} - {product.inspiredBy.name}
-                </span>
-              </div>
+              </p>
             )}
-
-            <h1 className="text-3xl font-extrabold uppercase tracking-wider text-black">
-              {product.title}
-            </h1>
-
-            <div className="mt-2 flex items-center gap-3">
-              <span className="text-2xl font-extrabold text-black">
-                GHS {activeVariant ? (activeVariant.pricePesewas / 100).toFixed(2) : "0.00"}
-              </span>
-              <span className="text-xs uppercase font-bold text-neutral-500 tracking-wider">
-                Concentration: {product.concentration}
-              </span>
-            </div>
+            <h1 className="heading-display text-4xl sm:text-5xl">{product.title}</h1>
+            <p className="text-sm text-stone">{product.concentration}</p>
+            <p className="pt-1 text-2xl text-ink">
+              {variant ? formatGhs(variant.pricePesewas) : "—"}
+              {variant?.comparePricePesewas && variant.comparePricePesewas > variant.pricePesewas && (
+                <span className="ml-3 text-base text-stone-light line-through">
+                  {formatGhs(variant.comparePricePesewas)}
+                </span>
+              )}
+            </p>
           </div>
 
-          <p className="text-xs text-neutral-600 leading-relaxed border-t border-neutral-100 pt-4">
-            {product.description}
-          </p>
+          <p className="max-w-prose text-[15px] leading-relaxed text-stone">{product.description}</p>
 
-          {/* Size Selector Chips */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-black mb-2">
-              Select Size
-            </label>
-            <div className="flex gap-3">
-              {product.variants.map((v, idx) => (
-                <button
-                  key={v.id}
-                  onClick={() => setSelectedVariantIndex(idx)}
-                  className={`px-4 py-2 border text-xs font-bold uppercase tracking-wider transition-all ${
-                    selectedVariantIndex === idx
-                      ? "border-black bg-black text-white"
-                      : "border-neutral-300 text-black hover:border-black"
-                  }`}
-                >
-                  {v.size}
-                </button>
-              ))}
+          <fieldset>
+            <legend className="mb-3 text-xs uppercase tracking-label text-ink">Size</legend>
+            <div className="flex flex-wrap gap-2">
+              {product.variants.map((v, idx) => {
+                const soldOut = v.stock <= 0;
+                const selected = idx === variantIndex;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => {
+                      setVariantIndex(idx);
+                      setQuantity(1);
+                    }}
+                    aria-pressed={selected}
+                    className={`min-w-[88px] border px-4 py-3 text-left transition-colors ${
+                      selected ? "border-ink bg-ink text-ivory" : "border-line bg-white hover:border-ink"
+                    } ${soldOut ? "opacity-50" : ""}`}
+                  >
+                    <span className="block text-sm">{v.size}</span>
+                    <span className={`block text-[11px] ${selected ? "text-ivory/70" : "text-stone"}`}>
+                      {soldOut ? "Sold out" : formatGhs(v.pricePesewas)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+            {variant && variant.stock > 0 && variant.stock <= 5 && (
+              <p className="mt-3 text-xs text-brand-gold-dark">Only {variant.stock} left in this size</p>
+            )}
+          </fieldset>
 
-          {/* Quantity & Add to Cart */}
-          <div className="flex gap-4 items-center pt-2">
-            <div className="flex items-center border border-neutral-300">
+          <div className="flex gap-3">
+            <div className="flex items-center border border-line bg-white">
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-3 py-2 text-xs font-bold hover:bg-neutral-100"
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="flex h-full w-11 items-center justify-center hover:bg-sand disabled:opacity-30"
+                disabled={quantity <= 1 || isOutOfStock}
+                aria-label="Decrease quantity"
               >
-                -
+                <Minus size={14} />
               </button>
-              <span className="px-4 text-xs font-bold">{quantity}</span>
+              <span className="w-8 text-center text-sm" aria-live="polite">{quantity}</span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="px-3 py-2 text-xs font-bold hover:bg-neutral-100"
+                type="button"
+                onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
+                className="flex h-full w-11 items-center justify-center hover:bg-sand disabled:opacity-30"
+                disabled={quantity >= maxQty || isOutOfStock}
+                aria-label="Increase quantity"
               >
-                +
+                <Plus size={14} />
               </button>
             </div>
-
-            <button
-              disabled={isOutOfStock}
-              onClick={handleAddToCart}
-              className={`flex-1 py-3 px-6 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                addedSuccess
-                  ? "bg-emerald-600 text-white"
-                  : isOutOfStock
-                  ? "bg-neutral-300 text-neutral-500 cursor-not-allowed"
-                  : "bg-black text-white hover:bg-brand-gold hover:text-black shadow-md"
-              }`}
-            >
-              {addedSuccess ? (
+            <button onClick={handleAddToCart} disabled={isOutOfStock} className="btn-primary flex-1">
+              {added ? (
                 <>
-                  <Check size={16} />
-                  <span>Added to Selection</span>
+                  <Check size={16} /> Added
                 </>
+              ) : isOutOfStock ? (
+                "Sold out"
               ) : (
-                <>
-                  <ShoppingBag size={16} />
-                  <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
-                </>
+                `Add to bag · ${formatGhs(variant.pricePesewas * quantity)}`
               )}
             </button>
           </div>
 
-          {/* WhatsApp Direct Query Link */}
+          <ul className="grid gap-3 border-y border-line py-5 text-sm text-ink sm:grid-cols-2">
+            <li className="flex items-center gap-3">
+              <ShieldCheck size={18} strokeWidth={1.5} className="text-brand-gold-dark" />
+              Pay cash or MoMo on delivery
+            </li>
+            <li className="flex items-center gap-3">
+              <Truck size={18} strokeWidth={1.5} className="text-brand-gold-dark" />
+              Delivery across all 16 regions
+            </li>
+          </ul>
+
+          <section aria-labelledby="notes-heading" className="space-y-4">
+            <h2 id="notes-heading" className="text-xs uppercase tracking-label text-ink">
+              Fragrance notes
+            </h2>
+            <dl className="divide-y divide-line border-y border-line">
+              {[
+                ["Top", product.topNotes],
+                ["Heart", product.heartNotes],
+                ["Base", product.baseNotes],
+              ].map(([label, notes]) => (
+                <div key={label as string} className="grid grid-cols-[80px_1fr] gap-4 py-3 text-sm">
+                  <dt className="text-stone">{label as string}</dt>
+                  <dd className="text-ink">{(notes as string[]).join(" · ") || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section aria-label="Performance" className="grid gap-5 sm:grid-cols-2">
+            <Meter label="Longevity" value={product.longevityRating} caption={LONGEVITY[product.longevityRating] ?? ""} />
+            <Meter label="Projection" value={product.sillageRating} caption={SILLAGE[product.sillageRating] ?? ""} />
+          </section>
+
           <a
-            href={`https://wa.me/233240001122?text=${whatsappMessage}`}
+            href={whatsappLink(`Hello RYZ Parfums, I have a question about ${product.title} (${variant?.size ?? ""}).`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-center border border-emerald-600 text-emerald-700 hover:bg-emerald-50 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-ink underline-offset-4 hover:underline"
           >
-            Ask about this scent on WhatsApp
+            <MessageCircle size={16} strokeWidth={1.5} />
+            Questions about this scent? Ask us on WhatsApp
           </a>
-
-          {/* Longevity and Sillage Meters */}
-          <div className="border-t border-neutral-200 pt-4 space-y-3">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-black">
-              Performance Attributes
-            </h3>
-
-            <div>
-              <div className="flex justify-between text-xs text-neutral-600 mb-1">
-                <span>Longevity</span>
-                <span>{product.longevityRating} / 5 (8-12 Hours)</span>
-              </div>
-              <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-brand-gold h-full"
-                  style={{ width: `${(product.longevityRating / 5) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs text-neutral-600 mb-1">
-                <span>Sillage / Projection</span>
-                <span>{product.sillageRating} / 5 (Strong)</span>
-              </div>
-              <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-brand-gold h-full"
-                  style={{ width: `${(product.sillageRating / 5) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes Pyramid */}
-          <div className="border-t border-neutral-200 pt-4 space-y-2">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-black">
-              Fragrance Notes Pyramid
-            </h3>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="bg-neutral-50 p-2 border border-neutral-200">
-                <span className="font-bold text-black block mb-1">Top Notes</span>
-                <span className="text-[11px] text-neutral-600">{product.topNotes.join(", ")}</span>
-              </div>
-              <div className="bg-neutral-50 p-2 border border-neutral-200">
-                <span className="font-bold text-black block mb-1">Heart Notes</span>
-                <span className="text-[11px] text-neutral-600">{product.heartNotes.join(", ")}</span>
-              </div>
-              <div className="bg-neutral-50 p-2 border border-neutral-200">
-                <span className="font-bold text-black block mb-1">Base Notes</span>
-                <span className="text-[11px] text-neutral-600">{product.baseNotes.join(", ")}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* COD Trust Badge */}
-          <div className="bg-neutral-50 border border-brand-gold/30 p-3 flex items-center justify-center gap-2 text-xs font-bold text-brand-gold-dark uppercase">
-            <ShieldCheck size={18} className="text-brand-gold" />
-            <span>CASH ON DELIVERY ACCEPTED NATIONWIDE</span>
-          </div>
         </div>
       </div>
     </div>
   );
-};
+}

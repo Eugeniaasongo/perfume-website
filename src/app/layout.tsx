@@ -1,20 +1,37 @@
-import React from "react";
+import type { Metadata, Viewport } from "next";
+// Self-hosted fonts so builds never depend on fetching from Google Fonts.
+import "@fontsource-variable/jost/wght.css";
+import "@fontsource/cormorant-garamond/latin-400.css";
+import "@fontsource/cormorant-garamond/latin-500.css";
+import "@fontsource/cormorant-garamond/latin-600.css";
+import "@fontsource/cormorant-garamond/latin-500-italic.css";
 import "@/app/globals.css";
 
-export const metadata = {
-  title: "RYZ Parfums | Long-Lasting Luxury Fragrances in Ghana",
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "RYZ Parfums | Long-Lasting Luxury Fragrances in Ghana",
+    template: "%s | RYZ Parfums",
+  },
   description:
-    "Ghanaian-owned luxury fragrance house crafting high-concentration Extraits de Parfum inspired by top designer and niche scents. Cash on Delivery accepted nationwide.",
+    "Ghanaian fragrance house crafting high-concentration Extraits de Parfum inspired by iconic designer and niche scents. Cash on Delivery nationwide.",
+  openGraph: {
+    type: "website",
+    siteName: "RYZ Parfums",
+    locale: "en_GH",
+  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  themeColor: "#0E0D0B",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-white text-black antialiased">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
