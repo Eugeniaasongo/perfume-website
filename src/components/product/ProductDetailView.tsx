@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Minus, Plus, ShieldCheck, Truck, MessageCircle } from "lucide-react";
 import { BottleArt } from "@/components/ui/BottleArt";
+import { BackInStockForm } from "@/components/product/BackInStockForm";
 import { showToast } from "@/components/ui/Toaster";
 import { addToCart, MAX_QUANTITY_PER_LINE } from "@/lib/cart";
 import { formatGhs } from "@/lib/format";
@@ -176,6 +177,8 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
               )}
             </button>
           </div>
+
+          {isOutOfStock && variant && <BackInStockForm key={variant.id} variantId={variant.id} size={variant.size} />}
 
           <ul className="grid gap-3 border-y border-line py-5 text-sm text-ink sm:grid-cols-2">
             <li className="flex items-center gap-3">

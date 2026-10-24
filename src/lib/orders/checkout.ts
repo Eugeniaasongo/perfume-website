@@ -205,7 +205,7 @@ export async function createOrder(input: CheckoutInput & { isCodOtpVerified: boo
   const initialStatus =
     input.paymentProvider === "CASH_ON_DELIVERY" ? "AWAITING_DELIVERY_PAYMENT" : "PENDING_PAYMENT";
 
-  return prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx) => {
     for (const line of quote.lines) {
       const reserved = await tx.productVariant.updateMany({
         where: { id: line.variantId, stock: { gte: line.quantity } },
@@ -277,4 +277,20 @@ export async function createOrder(input: CheckoutInput & { isCodOtpVerified: boo
 
     return order;
   });
+
+  await recordCustomerOrder(input.customerPhone, input.customerName);
+  return order;
+}
+
+/** Keeps a customer record per phone number. Bookkeeping only: failures never affect the sale. */
+async function recordCustomerOrder(phone: string, name: string) {
+  try {
+    await prisma.customer.upsert({
+      where: { phone },
+      update: { name, orderCount: { increment: 1 }, lastOrderAt: new Date() },
+      create: { phone, name, orderCount: 1, lastOrderAt: new Date() },
+    });
+  } catch (error) {
+    console.error(`Failed to update customer record for ${phone}:`, error);
+  }
 }

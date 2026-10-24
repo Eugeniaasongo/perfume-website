@@ -4,6 +4,7 @@ import { getSiteUrl } from "@/lib/env";
 import { verifyPhoneOtp } from "@/lib/otp";
 import { PaystackProvider } from "@/lib/payments/paystack";
 import { transitionOrderState } from "@/lib/orders/state-machine";
+import { notifyOrderStatus } from "@/lib/notifications/orders";
 import { checkoutSchema, createOrder, CheckoutError } from "@/lib/orders/checkout";
 import { jsonError, readJson, zodErrorResponse } from "@/lib/api";
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       }
     }
 
+    await notifyOrderStatus(order.id, "ORDER_PLACED");
     return NextResponse.json({ success: true, orderNumber: order.orderNumber, redirectUrl: orderUrl });
   } catch (error) {
     if (error instanceof CheckoutError) return jsonError(error.message, error.status);

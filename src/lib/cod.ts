@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { transitionOrderStateTx, type OrderState } from "@/lib/orders/state-machine";
+import { notifyOrderStatus } from "@/lib/notifications/orders";
 
 export async function recordCodCashCollection(input: {
   orderId: string;
@@ -7,7 +8,7 @@ export async function recordCodCashCollection(input: {
   collectorName: string;
   notes?: string;
 }) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: input.orderId } });
 
     if (!order) {
@@ -30,7 +31,8 @@ export async function recordCodCashCollection(input: {
     });
 
     const targetState: OrderState = isAmountMatch ? "DELIVERED" : "ON_HOLD";
-    if (order.status !== targetState) {
+    const changed = order.status !== targetState;
+    if (changed) {
       await transitionOrderStateTx(tx, {
         orderId: order.id,
         targetState,
@@ -41,6 +43,9 @@ export async function recordCodCashCollection(input: {
       });
     }
 
-    return log;
+    return { log, targetState: changed ? targetState : undefined };
   });
+
+  if (result.targetState) await notifyOrderStatus(input.orderId, result.targetState);
+  return result.log;
 }

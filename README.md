@@ -28,8 +28,12 @@ npm test        # needs DATABASE_URL; point it at a dev/test database, never pro
 
 1. Create a PostgreSQL database (Neon, Supabase, Vercel Postgres…).
 2. Set every variable in `.env.example` in the Vercel project. Generate secrets with `openssl rand -base64 48`.
-3. Deploy. The build runs `prisma migrate deploy` before `next build`. Seed once with `npm run db:seed` against the production URL, or add products from the admin portal later.
+3. Deploy. The build runs `prisma migrate deploy` before `next build`. To load the sample catalog, set `SEED_SAMPLE_DATA=true` and redeploy; it only adds missing sample records, so it never overwrites prices or stock edited in the admin portal. Remove the variable once you have your own catalog.
 4. In the Paystack dashboard, set the webhook URL to `https://<your-domain>/api/webhooks/paystack`.
 5. Vercel Cron calls `/api/cron/expire-orders` daily, which cancels unpaid online orders older than an hour and returns their stock.
+
+## Running the shop
+
+The admin portal covers the whole sales workflow: confirming and packing orders (with printable packing slips), dispatching with rider details, recording COD cash, full and partial refunds, blocking Cash on Delivery for numbers that refuse deliveries, managing products, sizes and discount codes, and sales reports with CSV export. Customers are texted at each step. Day-to-day steps are in `docs/runbook.md`.
 
 See `docs/` for the architecture overview, payments specification, runbook and go-live checklist.

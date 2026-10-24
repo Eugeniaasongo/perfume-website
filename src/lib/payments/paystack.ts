@@ -1,5 +1,7 @@
 import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notifyOrderStatus } from "@/lib/notifications/orders";
 import { isProduction } from "@/lib/env";
 import { canTransition, transitionOrderStateTx, type OrderState } from "@/lib/orders/state-machine";
 
@@ -11,11 +13,20 @@ export interface PaymentInitializationInput {
   callbackUrl: string;
 }
 
+export interface VerifiedTransaction {
+  success: boolean;
+  reference: string;
+  amountPesewas: number;
+  currency: string;
+  orderId?: string;
+}
+
 export interface PaymentProvider {
   initializeTransaction(
     input: PaymentInitializationInput
   ): Promise<{ authorizationUrl: string; reference: string }>;
-  verifyTransaction(reference: string): Promise<{ success: boolean; amountPesewas: number }>;
+  verifyTransaction(reference: string): Promise<VerifiedTransaction>;
+  refundTransaction(reference: string, amountPesewas: number): Promise<{ refundId: string }>;
 }
 
 const MOCK_SECRET = "sk_test_mock_paystack_secret_key";
@@ -72,10 +83,13 @@ export class PaystackProvider implements PaymentProvider {
     };
   }
 
-  async verifyTransaction(reference: string) {
-    if (this.isMock) {
-      return { success: false, amountPesewas: 0 };
-    }
+  get isMockMode() {
+    return this.isMock;
+  }
+
+  async verifyTransaction(reference: string): Promise<VerifiedTransaction> {
+    const failed = { success: false, reference, amountPesewas: 0, currency: "GHS" };
+    if (this.isMock) return failed;
 
     const response = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
@@ -87,14 +101,34 @@ export class PaystackProvider implements PaymentProvider {
     );
 
     const data = await response.json();
-    if (!data.status || data.data.status !== "success") {
-      return { success: false, amountPesewas: 0 };
-    }
+    if (!data.status || data.data?.status !== "success") return failed;
 
     return {
       success: true,
+      reference,
       amountPesewas: data.data.amount,
+      currency: data.data.currency ?? "GHS",
+      orderId: data.data.metadata?.orderId,
     };
+  }
+
+  async refundTransaction(reference: string, amountPesewas: number): Promise<{ refundId: string }> {
+    if (this.isMock) {
+      return { refundId: `mock-refund-${Date.now()}` };
+    }
+
+    const response = await fetch("https://api.paystack.co/refund", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.secretKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ transaction: reference, amount: amountPesewas }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.status) {
+      throw new Error(data.message || "Paystack refused the refund");
+    }
+    return { refundId: String(data.data?.id ?? data.data?.transaction?.id ?? Date.now()) };
   }
 
   verifyWebhookSignature(rawBody: string, signature: string): boolean {
@@ -108,6 +142,100 @@ export class PaystackProvider implements PaymentProvider {
 }
 
 export class WebhookSignatureError extends Error {}
+
+/**
+ * Records a successful Paystack charge against its order exactly once (the ledger's unique
+ * reference makes this idempotent), then notifies the customer. Shared by the webhook and
+ * by the verification that runs when the customer returns from Paystack.
+ */
+export async function recordPaystackCharge(charge: {
+  reference: string;
+  amountPesewas: number;
+  currency?: string;
+  orderId: string;
+  signature?: string;
+  metadata?: unknown;
+  source: "PAYSTACK_WEBHOOK" | "PAYSTACK_VERIFY";
+}) {
+  const existingLedger = await prisma.paymentLedger.findUnique({
+    where: { reference: charge.reference },
+  });
+
+  if (existingLedger) {
+    return { status: "already_processed" as const, reference: charge.reference };
+  }
+
+  const currency = charge.currency ?? "GHS";
+
+  let result;
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { id: charge.orderId } });
+
+      if (!order) {
+        return { status: "ignored" as const, reason: "order_not_found", orderId: charge.orderId };
+      }
+
+      const amountMatches = order.totalPrice === charge.amountPesewas && currency === "GHS";
+
+      await tx.paymentLedger.create({
+        data: {
+          orderId: order.id,
+          provider: "PAYSTACK",
+          reference: charge.reference,
+          amountPesewas: charge.amountPesewas,
+          currency,
+          status: amountMatches ? "SUCCESS" : "AMOUNT_MISMATCH",
+          hmacSignature: charge.signature,
+          metadataJson: charge.metadata ? JSON.stringify(charge.metadata) : null,
+        },
+      });
+
+      const current = order.status as OrderState;
+      // Money arrived for an order we can't simply mark paid (e.g. it was already cancelled
+      // and its stock released): park it for manual review instead of dropping the payment.
+      const target: OrderState = amountMatches && canTransition(current, "PAID") ? "PAID" : "ON_HOLD";
+
+      if (current !== target && canTransition(current, target)) {
+        await transitionOrderStateTx(tx, {
+          orderId: order.id,
+          targetState: target,
+          actor: charge.source,
+          notes: amountMatches
+            ? `Payment ${charge.reference} confirmed`
+            : `Amount mismatch: expected ${order.totalPrice}, received ${charge.amountPesewas} ${currency}`,
+        });
+      } else if (target === "ON_HOLD") {
+        await tx.auditLog.create({
+          data: {
+            orderId: order.id,
+            actor: charge.source,
+            action: "PAYMENT_NEEDS_REVIEW",
+            details: `Payment ${charge.reference} received while order was ${current}`,
+          },
+        });
+      }
+
+      return {
+        status: target === "PAID" ? ("success" as const) : ("needs_review" as const),
+        orderId: order.id,
+        reference: charge.reference,
+        notify: current !== target && target === "PAID",
+      };
+    });
+  } catch (error) {
+    // The webhook and the return-from-Paystack check can race; the loser hits the unique reference.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { status: "already_processed" as const, reference: charge.reference };
+    }
+    throw error;
+  }
+
+  if ("notify" in result && result.notify) {
+    await notifyOrderStatus(result.orderId, "PAID");
+  }
+  return result;
+}
 
 export async function processPaystackWebhookEvent(rawBody: string, signature: string) {
   const paystack = new PaystackProvider();
@@ -129,61 +257,41 @@ export async function processPaystackWebhookEvent(rawBody: string, signature: st
     return { status: "ignored", reason: "missing_order_id" };
   }
 
-  const existingLedger = await prisma.paymentLedger.findUnique({
-    where: { reference },
+  return recordPaystackCharge({
+    reference,
+    amountPesewas: amount,
+    currency,
+    orderId,
+    signature,
+    metadata,
+    source: "PAYSTACK_WEBHOOK",
   });
+}
 
-  if (existingLedger) {
-    return { status: "already_processed", reference };
+/**
+ * Confirms a payment directly with Paystack when the customer lands back on the order page,
+ * so the order shows as paid even if the webhook is slow or lost.
+ */
+export async function confirmPaystackPayment(orderId: string, reference: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order || order.paymentProvider !== "PAYSTACK" || order.status !== "PENDING_PAYMENT") return;
+  if (!reference.startsWith(`RYZ-PAY-${order.orderNumber}-`)) return;
+
+  const paystack = new PaystackProvider();
+  if (paystack.isMockMode) {
+    // Local development without Paystack keys: treat the simulated checkout as paid.
+    await recordPaystackCharge({ reference, amountPesewas: order.totalPrice, orderId, source: "PAYSTACK_VERIFY" });
+    return;
   }
 
-  return prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId } });
+  const verified = await paystack.verifyTransaction(reference);
+  if (!verified.success || (verified.orderId && verified.orderId !== orderId)) return;
 
-    if (!order) {
-      return { status: "ignored", reason: "order_not_found", orderId };
-    }
-
-    const amountMatches = order.totalPrice === amount && (currency ?? "GHS") === "GHS";
-
-    await tx.paymentLedger.create({
-      data: {
-        orderId: order.id,
-        provider: "PAYSTACK",
-        reference,
-        amountPesewas: amount,
-        currency: currency ?? "GHS",
-        status: amountMatches ? "SUCCESS" : "AMOUNT_MISMATCH",
-        hmacSignature: signature,
-        metadataJson: JSON.stringify(metadata),
-      },
-    });
-
-    const current = order.status as OrderState;
-    // Money arrived for an order we can't simply mark paid (e.g. it was already cancelled
-    // and its stock released): park it for manual review instead of dropping the payment.
-    const target: OrderState = amountMatches && canTransition(current, "PAID") ? "PAID" : "ON_HOLD";
-
-    if (current !== target && canTransition(current, target)) {
-      await transitionOrderStateTx(tx, {
-        orderId: order.id,
-        targetState: target,
-        actor: "PAYSTACK_WEBHOOK",
-        notes: amountMatches
-          ? `Payment ${reference} confirmed`
-          : `Amount mismatch: expected ${order.totalPrice}, received ${amount} ${currency ?? ""}`,
-      });
-    } else if (target === "ON_HOLD") {
-      await tx.auditLog.create({
-        data: {
-          orderId: order.id,
-          actor: "PAYSTACK_WEBHOOK",
-          action: "PAYMENT_NEEDS_REVIEW",
-          details: `Payment ${reference} received while order was ${current}`,
-        },
-      });
-    }
-
-    return { status: target === "PAID" ? "success" : "needs_review", orderId, reference };
+  await recordPaystackCharge({
+    reference,
+    amountPesewas: verified.amountPesewas,
+    currency: verified.currency,
+    orderId,
+    source: "PAYSTACK_VERIFY",
   });
 }

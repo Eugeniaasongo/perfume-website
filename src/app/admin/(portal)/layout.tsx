@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutDashboard, LogOut, Package, Settings, ShoppingBag, ExternalLink } from "lucide-react";
+import { BarChart3, LayoutDashboard, LogOut, Package, Settings, ShoppingBag, ExternalLink, Tag } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/admin";
 import { logoutAction } from "../login/actions";
 import { CrownMark } from "@/components/ui/Logo";
@@ -12,6 +12,8 @@ const nav = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/products", label: "Products & stock", icon: Package },
+  { href: "/admin/discounts", label: "Discount codes", icon: Tag },
+  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -19,8 +21,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-[#F6F4F0] lg:grid lg:grid-cols-[240px_1fr]">
-      <aside className="border-b border-line bg-ink text-ivory lg:sticky lg:top-0 lg:h-screen lg:border-b-0">
+    <div className="min-h-screen bg-[#F6F4F0] print:block print:bg-white lg:grid lg:grid-cols-[240px_1fr]">
+      <aside className="border-b border-line bg-ink text-ivory print:hidden lg:sticky lg:top-0 lg:h-screen lg:border-b-0">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <CrownMark className="h-3.5 w-6 text-brand-gold" />
           <span className="text-sm font-medium tracking-wide">RYZ Admin</span>
@@ -47,7 +49,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </form>
         </div>
       </aside>
-      <main className="min-w-0 px-4 py-8 sm:px-8 lg:px-10">{children}</main>
+      <main className="min-w-0 px-4 py-8 print:p-0 sm:px-8 lg:px-10">{children}</main>
     </div>
   );
 }

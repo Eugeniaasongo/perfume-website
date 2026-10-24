@@ -48,8 +48,21 @@ export async function cleanupTestData() {
     select: { id: true },
   });
   const orderIds = orders.map((o) => o.id);
+  const subscribers = await prisma.backInStockSubscriber.findMany({
+    where: { variantId: { in: variantIds } },
+    select: { phone: true },
+  });
+  const phones = [
+    ...(await prisma.order.findMany({ where: { id: { in: orderIds } }, select: { customerPhone: true } })).map(
+      (o) => o.customerPhone
+    ),
+    ...subscribers.flatMap((s) => (s.phone ? [s.phone] : [])),
+  ];
   await prisma.auditLog.deleteMany({ where: { orderId: { in: orderIds } } });
+  await prisma.notificationLog.deleteMany({ where: { OR: [{ orderId: { in: orderIds } }, { recipient: { in: phones } }] } });
   await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+  await prisma.customer.deleteMany({ where: { phone: { in: phones } } });
+  await prisma.backInStockSubscriber.deleteMany({ where: { variantId: { in: variantIds } } });
   await prisma.product.deleteMany({ where: { slug: { startsWith: "test-scent-" } } });
   await prisma.discountCode.deleteMany({ where: { code: { startsWith: "T" }, maxUses: 1, percentageOff: 10 } });
 }

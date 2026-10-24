@@ -6,13 +6,15 @@ import { normalizeGhanaPhone } from "@/lib/phone";
 import { formatGhs } from "@/lib/format";
 import { whatsappLink } from "@/lib/site";
 import { ORDER_STATE_LABELS, type OrderState } from "@/lib/orders/state-machine";
+import { confirmPaystackPayment } from "@/lib/payments/paystack";
+import { CompletePaymentButton } from "./CompletePaymentButton";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your order", robots: { index: false } };
 
 interface OrderPageProps {
   params: Promise<{ orderNumber: string }>;
-  searchParams: Promise<{ phone?: string }>;
+  searchParams: Promise<{ phone?: string; reference?: string; trxref?: string }>;
 }
 
 const STEPS = ["Order placed", "Confirmed", "Out for delivery", "Delivered"];
@@ -37,15 +39,27 @@ function stepFor(status: OrderState): number {
 
 export default async function OrderPage({ params, searchParams }: OrderPageProps) {
   const { orderNumber } = await params;
-  const { phone } = await searchParams;
+  const { phone, reference, trxref } = await searchParams;
   const normalizedPhone = phone ? normalizeGhanaPhone(phone) : null;
 
-  const order = normalizedPhone
-    ? await prisma.order.findUnique({
-        where: { orderNumber: decodeURIComponent(orderNumber).toUpperCase() },
-        include: { items: { include: { variant: { include: { product: { select: { title: true, slug: true } } } } } } },
-      })
-    : null;
+  const loadOrder = () =>
+    prisma.order.findUnique({
+      where: { orderNumber: decodeURIComponent(orderNumber).toUpperCase() },
+      include: { items: { include: { variant: { include: { product: { select: { title: true, slug: true } } } } } } },
+    });
+
+  let order = normalizedPhone ? await loadOrder() : null;
+
+  // Back from Paystack: confirm the payment directly instead of waiting for the webhook.
+  const paymentReference = reference || trxref;
+  if (order && order.customerPhone === normalizedPhone && order.status === "PENDING_PAYMENT" && paymentReference) {
+    try {
+      await confirmPaystackPayment(order.id, paymentReference);
+      order = await loadOrder();
+    } catch (error) {
+      console.error(`Payment confirmation failed for ${orderNumber}:`, error);
+    }
+  }
 
   // Same response for "wrong phone" and "no such order" so order numbers can't be enumerated.
   if (!order || order.customerPhone !== normalizedPhone) {
@@ -76,11 +90,12 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
         </h1>
         <p className="mx-auto mt-4 max-w-md text-sm text-stone">
           {awaitingPayment
-            ? "We're waiting for confirmation of your payment. This usually takes a few seconds — refresh this page shortly."
+            ? "Your order is reserved but not paid yet. If you've just paid, refresh in a few seconds; otherwise complete your payment below."
             : order.paymentProvider === "CASH_ON_DELIVERY"
               ? `Please have ${formatGhs(order.totalPrice)} ready in cash or MoMo when your order arrives.`
               : "Your payment was received. We'll text you when your order is on its way."}
         </p>
+        {awaitingPayment && <CompletePaymentButton orderNumber={order.orderNumber} phone={order.customerPhone} />}
       </div>
 
       <section className="mt-12 bg-white p-6 sm:p-8">
@@ -109,11 +124,35 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
               </li>
             ))}
           </ol>
-        ) : (
+        ) : null}
+
+        {status === "SHIPPED" && order.riderName && (
+          <p className="mt-6 border-t border-line pt-4 text-sm text-ink">
+            Your rider is <strong className="font-medium">{order.riderName}</strong>
+            {order.riderPhone && (
+              <>
+                {" "}
+                —{" "}
+                <a href={`tel:${order.riderPhone}`} className="underline underline-offset-2">
+                  {order.riderPhone}
+                </a>
+              </>
+            )}
+            .
+          </p>
+        )}
+
+        {step < 0 && !["CANCELLED", "REFUNDED", "PARTIALLY_REFUNDED"].includes(status) ? (
           <p className="mt-6 text-sm text-stone">
             This order needs attention. Our team will contact you, or you can reach us on WhatsApp.
           </p>
-        )}
+        ) : step < 0 ? (
+          <p className="mt-6 text-sm text-stone">
+            {status === "CANCELLED"
+              ? "This order was cancelled. If you were charged, your refund will follow."
+              : "A refund has been issued for this order."}
+          </p>
+        ) : null}
       </section>
 
       <section className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -153,6 +192,12 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
               <dt>Total</dt>
               <dd>{formatGhs(order.totalPrice)}</dd>
             </div>
+            {order.refundedAmount > 0 && (
+              <div className="flex justify-between text-emerald-700">
+                <dt>Refunded</dt>
+                <dd>{formatGhs(order.refundedAmount)}</dd>
+              </div>
+            )}
           </dl>
         </div>
 
