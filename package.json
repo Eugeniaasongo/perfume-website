@@ -15,7 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "node scripts/check-env.mjs && prisma migrate deploy && next build",
     "test": "tsx --test --test-concurrency=1 tests/**/*.test.ts"
   },
   "prisma": {
