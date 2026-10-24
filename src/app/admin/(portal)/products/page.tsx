@@ -15,7 +15,11 @@ export default async function AdminProductsPage() {
 
   return (
     <>
-      <PageHeader title="Products & stock" description="Update prices and stock levels. Changes are live immediately." />
+      <PageHeader title="Products & stock" description="Update prices and stock levels. Changes are live immediately.">
+        <Link href="/admin/products/new" className="rounded-md bg-ink px-4 py-2 text-sm text-ivory hover:bg-brand-gold-dark">
+          New product
+        </Link>
+      </PageHeader>
 
       <div className="space-y-4">
         {products.map((product) => (
@@ -31,6 +35,9 @@ export default async function AdminProductsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3 text-sm">
+                <Link href={`/admin/products/${product.id}`} className="text-stone hover:text-ink">
+                  Edit
+                </Link>
                 <Link href={`/products/${product.slug}`} target="_blank" className="text-stone hover:text-ink">
                   View
                 </Link>

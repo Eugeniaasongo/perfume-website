@@ -7,6 +7,8 @@
 - [ ] `PAYSTACK_SECRET_KEY` (live key) set; webhook URL registered in Paystack
 - [ ] `ARKESEL_API_KEY` and an approved `SMS_SENDER_ID` set (Cash on Delivery is unavailable without them)
 - [ ] `CRON_SECRET` set
+- [ ] `ADMIN_ALERT_PHONE` set to the number that should hear about new orders
+- [ ] Paystack account allowed to issue refunds (Settings → Preferences in the Paystack dashboard)
 - [ ] Real support phone, email and WhatsApp numbers set (`NEXT_PUBLIC_SUPPORT_*`, `NEXT_PUBLIC_WHATSAPP_NUMBER`)
 - [ ] Product prices and stock reviewed in `/admin/products`; seed/test discount codes removed or adjusted
 
