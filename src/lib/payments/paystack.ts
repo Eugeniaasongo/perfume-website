@@ -45,7 +45,7 @@ export class PaystackProvider implements PaymentProvider {
   }
 
   async initializeTransaction(input: PaymentInitializationInput) {
-    const reference = `RYZ-PAY-${input.orderNumber}-${Date.now()}`;
+    const reference = `DHA-PAY-${input.orderNumber}-${Date.now()}`;
 
     if (this.isMock) {
       // Local development without Paystack keys: skip the gateway and land on the order page.
@@ -275,7 +275,9 @@ export async function processPaystackWebhookEvent(rawBody: string, signature: st
 export async function confirmPaystackPayment(orderId: string, reference: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order || order.paymentProvider !== "PAYSTACK" || order.status !== "PENDING_PAYMENT") return;
-  if (!reference.startsWith(`RYZ-PAY-${order.orderNumber}-`)) return;
+  // RYZ-PAY- covers checkouts started before the rename to DHA Perfumes.
+  const isOwnReference = ["DHA-PAY-", "RYZ-PAY-"].some((prefix) => reference.startsWith(`${prefix}${order.orderNumber}-`));
+  if (!isOwnReference) return;
 
   const paystack = new PaystackProvider();
   if (paystack.isMockMode) {

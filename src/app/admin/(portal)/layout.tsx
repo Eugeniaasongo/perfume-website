@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { logoutAction } from "../login/actions";
 import { CrownMark } from "@/components/ui/Logo";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s · RYZ Admin" }, robots: { index: false } };
+export const metadata: Metadata = { title: { default: "Admin", template: "%s · DHA Admin" }, robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 const nav = [
@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="border-b border-line bg-ink text-ivory print:hidden lg:sticky lg:top-0 lg:h-screen lg:border-b-0">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <CrownMark className="h-3.5 w-6 text-brand-gold" />
-          <span className="text-sm font-medium tracking-wide">RYZ Admin</span>
+          <span className="text-sm font-medium tracking-wide">DHA Admin</span>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0">
           {nav.map(({ href, label, icon: Icon }) => (

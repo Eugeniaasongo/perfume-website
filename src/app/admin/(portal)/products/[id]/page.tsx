@@ -165,7 +165,7 @@ export default async function AdminProductEditPage({ params }: { params: Promise
               </label>
               <label className={label}>
                 SKU
-                <input name="sku" required placeholder="RYZ-XX-50ML" className={`${input} uppercase`} />
+                <input name="sku" required placeholder="DHA-XX-50ML" className={`${input} uppercase`} />
               </label>
               <label className={label}>
                 Price (GHS)

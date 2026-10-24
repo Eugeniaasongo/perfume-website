@@ -1,4 +1,4 @@
-# RYZ Parfums Payments & COD Specification
+# DHA Perfumes Payments & COD Specification
 
 ## 1. Integer Pesewas Financial Rule
 All prices, order totals, shipping fees, and discounts are represented as non-negative integers representing pesewas (1 GHS = 100 pesewas). Floating-point currency calculations are strictly prohibited.

@@ -215,7 +215,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
           </section>
 
           <a
-            href={whatsappLink(`Hello RYZ Parfums, I have a question about ${product.title} (${variant?.size ?? ""}).`)}
+            href={whatsappLink(`Hello DHA Perfumes, I have a question about ${product.title} (${variant?.size ?? ""}).`)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-ink underline-offset-4 hover:underline"

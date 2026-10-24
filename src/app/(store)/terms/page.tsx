@@ -8,8 +8,8 @@ const sections = [
     id: "brand",
     title: "Fragrance formulation & brand disclaimer",
     body: [
-      "RYZ Parfums produces independent, high-concentration Extraits de Parfum. References to third-party designer brands or perfume names (shown as “Inspired by”) describe comparable scent profiles only.",
-      "RYZ Parfums is not affiliated with, endorsed by, or associated with any of those brand owners, and their trademarks belong to their respective owners.",
+      "DHA Perfumes produces independent, high-concentration Extraits de Parfum. References to third-party designer brands or perfume names (shown as “Inspired by”) describe comparable scent profiles only.",
+      "DHA Perfumes is not affiliated with, endorsed by, or associated with any of those brand owners, and their trademarks belong to their respective owners.",
     ],
   },
   {
@@ -43,7 +43,7 @@ export default function TermsPage() {
       <p className="eyebrow">Policies</p>
       <h1 className="heading-display mt-3 text-5xl">Terms & conditions</h1>
       <p className="mt-6 leading-relaxed text-stone">
-        By placing an order with RYZ Parfums you agree to the terms below.
+        By placing an order with DHA Perfumes you agree to the terms below.
       </p>
       <div className="mt-12 space-y-12">
         {sections.map((s) => (

@@ -1,4 +1,4 @@
-# RYZ Parfums Architecture Overview
+# DHA Perfumes Architecture Overview
 
 Next.js App Router (TypeScript strict) + Tailwind CSS, PostgreSQL via Prisma.
 

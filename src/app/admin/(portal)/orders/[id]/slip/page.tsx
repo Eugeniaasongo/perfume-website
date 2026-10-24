@@ -27,8 +27,8 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
 
       <header className="flex items-start justify-between border-b border-ink pb-4">
         <div>
-          <p className="font-display text-2xl tracking-[0.3em] text-brand-gold-dark">RYZ</p>
-          <p className="text-[10px] tracking-[0.4em]">PARFUMS</p>
+          <p className="font-display text-2xl tracking-[0.3em] text-brand-gold-dark">DHA</p>
+          <p className="text-[10px] tracking-[0.4em]">PERFUMES</p>
         </div>
         <div className="text-right">
           <p className="text-lg font-semibold">{order.orderNumber}</p>
@@ -81,7 +81,7 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
       </table>
 
       <footer className="mt-10 border-t border-line pt-4 text-xs text-stone">
-        Thank you for shopping with RYZ Parfums. Questions? WhatsApp +{SITE.whatsapp} · {SITE.email}
+        Thank you for shopping with DHA Perfumes. Questions? WhatsApp +{SITE.whatsapp} · {SITE.email}
       </footer>
     </div>
   );

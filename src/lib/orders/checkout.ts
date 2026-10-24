@@ -181,7 +181,7 @@ export function generateOrderNumber(): string {
   const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
   let suffix = "";
   for (let i = 0; i < 7; i++) suffix += alphabet[crypto.randomInt(alphabet.length)];
-  return `RYZ-${suffix}`;
+  return `DHA-${suffix}`;
 }
 
 /**

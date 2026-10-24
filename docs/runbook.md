@@ -1,4 +1,4 @@
-# RYZ Parfums Operations Runbook
+# DHA Perfumes Operations Runbook
 
 ## Webhook failure recovery
 1. Open `/admin/orders?status=PENDING_PAYMENT`.

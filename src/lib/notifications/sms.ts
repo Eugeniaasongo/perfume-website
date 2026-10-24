@@ -23,7 +23,7 @@ export async function sendSms(phoneE164: string, message: string): Promise<void>
     method: "POST",
     headers: { "api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: process.env.SMS_SENDER_ID || "RYZ Parfums",
+      sender: process.env.SMS_SENDER_ID || "DHA Perfumes",
       message,
       recipients: [phoneE164.replace(/^\+/, "")],
     }),

@@ -65,7 +65,7 @@ export function Footer() {
             </li>
             <li>
               <a
-                href={whatsappLink("Hi RYZ Parfums, I have a question")}
+                href={whatsappLink("Hi DHA Perfumes, I have a question")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-ivory"
@@ -79,9 +79,9 @@ export function Footer() {
 
       <div className="border-t border-ivory/10">
         <div className="container-page flex flex-col gap-3 py-6 text-[11px] text-ivory/40 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} RYZ Parfums. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DHA Perfumes. All rights reserved.</p>
           <p>
-            RYZ Parfums is not affiliated with the brands referenced as inspiration.{" "}
+            DHA Perfumes is not affiliated with the brands referenced as inspiration.{" "}
             <Link href="/terms" className="underline underline-offset-2 hover:text-ivory/70">
               Terms
             </Link>

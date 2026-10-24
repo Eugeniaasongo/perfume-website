@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   return {
     title: product.title,
     description: `${product.description}${from}`,
-    openGraph: { title: `${product.title} | RYZ Parfums`, description: product.description },
+    openGraph: { title: `${product.title} | DHA Perfumes`, description: product.description },
   };
 }
 
@@ -37,7 +37,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     "@type": "Product",
     name: product.title,
     description: product.description,
-    brand: { "@type": "Brand", name: "RYZ Parfums" },
+    brand: { "@type": "Brand", name: "DHA Perfumes" },
     offers: product.variants.map((v) => ({
       "@type": "Offer",
       sku: v.sku,

@@ -26,21 +26,21 @@ const isCod = (order: OrderForMessage) => order.paymentProvider === "CASH_ON_DEL
 /** Customer-facing SMS for each status. States without a template send nothing. */
 const CUSTOMER_TEMPLATES: Record<string, (o: OrderForMessage) => string> = {
   ORDER_PLACED: (o) =>
-    `RYZ Parfums: thank you ${o.customerName.split(" ")[0]}! Order ${o.orderNumber} is received. Pay ${formatGhs(o.totalPrice)} on delivery. Track: ${orderLink(o)}`,
+    `DHA Perfumes: thank you ${o.customerName.split(" ")[0]}! Order ${o.orderNumber} is received. Pay ${formatGhs(o.totalPrice)} on delivery. Track: ${orderLink(o)}`,
   PAID: (o) =>
-    `RYZ Parfums: payment of ${formatGhs(o.totalPrice)} received for order ${o.orderNumber}. We're preparing it now. Track: ${orderLink(o)}`,
-  CONFIRMED: (o) => `RYZ Parfums: order ${o.orderNumber} is confirmed and being prepared for delivery.`,
+    `DHA Perfumes: payment of ${formatGhs(o.totalPrice)} received for order ${o.orderNumber}. We're preparing it now. Track: ${orderLink(o)}`,
+  CONFIRMED: (o) => `DHA Perfumes: order ${o.orderNumber} is confirmed and being prepared for delivery.`,
   SHIPPED: (o) =>
-    `RYZ Parfums: order ${o.orderNumber} is on its way${o.riderName ? ` with ${o.riderName}` : ""}${
+    `DHA Perfumes: order ${o.orderNumber} is on its way${o.riderName ? ` with ${o.riderName}` : ""}${
       o.riderPhone ? ` (${o.riderPhone})` : ""
     }.${isCod(o) ? ` Please have ${formatGhs(o.totalPrice)} ready in cash or MoMo.` : ""}`,
-  DELIVERED: (o) => `RYZ Parfums: order ${o.orderNumber} has been delivered. Thank you for choosing us!`,
+  DELIVERED: (o) => `DHA Perfumes: order ${o.orderNumber} has been delivered. Thank you for choosing us!`,
   CANCELLED: (o) =>
-    `RYZ Parfums: order ${o.orderNumber} has been cancelled. Questions? WhatsApp us on +${SITE.whatsapp}.`,
+    `DHA Perfumes: order ${o.orderNumber} has been cancelled. Questions? WhatsApp us on +${SITE.whatsapp}.`,
   REFUNDED: (o) =>
-    `RYZ Parfums: a refund of ${formatGhs(o.refundedAmount)} for order ${o.orderNumber} has been issued.`,
+    `DHA Perfumes: a refund of ${formatGhs(o.refundedAmount)} for order ${o.orderNumber} has been issued.`,
   PARTIALLY_REFUNDED: (o) =>
-    `RYZ Parfums: a refund of ${formatGhs(o.refundedAmount)} for order ${o.orderNumber} has been issued.`,
+    `DHA Perfumes: a refund of ${formatGhs(o.refundedAmount)} for order ${o.orderNumber} has been issued.`,
 };
 
 async function deliver(order: OrderForMessage | null, recipient: string, template: string, message: string) {
@@ -97,7 +97,7 @@ export async function notifyOrderStatus(orderId: string, event: string): Promise
         order,
         adminPhone,
         "ADMIN_NEW_ORDER",
-        `New RYZ order ${order.orderNumber}: ${formatGhs(order.totalPrice)} · ${
+        `New DHA order ${order.orderNumber}: ${formatGhs(order.totalPrice)} · ${
           isCod(order) ? "Cash on Delivery" : "Paid online"
         } · ${order.customerName}, ${order.city}`
       );
@@ -127,7 +127,7 @@ export async function notifyBackInStock(variantId: string): Promise<number> {
         null,
         sub.phone!,
         "BACK_IN_STOCK",
-        `RYZ Parfums: ${variant.product.title} ${variant.size} is back in stock. Shop now: ${link}`
+        `DHA Perfumes: ${variant.product.title} ${variant.size} is back in stock. Shop now: ${link}`
       );
       await prisma.backInStockSubscriber.update({ where: { id: sub.id }, data: { notifiedAt: new Date() } });
     }
