@@ -29,7 +29,7 @@ export default async function AdminSettingsPage() {
             <input type="checkbox" name="showImages" defaultChecked={config.showImages} className="mt-1 accent-ink" />
             <span>
               <span className="font-medium text-ink">Show inspiration imagery</span>
-              <span className="block text-xs text-stone">Only proprietary RYZ imagery should ever be uploaded</span>
+              <span className="block text-xs text-stone">Only proprietary DHA imagery should ever be uploaded</span>
             </span>
           </label>
           <label className="block text-sm">

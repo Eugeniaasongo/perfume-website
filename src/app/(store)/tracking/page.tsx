@@ -32,7 +32,7 @@ export default async function OrderTrackingPage({ searchParams }: TrackingPagePr
             name="orderNumber"
             required
             defaultValue={orderNumber}
-            placeholder="RYZ-XXXXXXX"
+            placeholder="DHA-XXXXXXX"
             className="field-input uppercase tracking-wider"
           />
         </div>

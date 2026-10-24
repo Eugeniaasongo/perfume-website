@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding database for RYZ Parfums...");
+  console.log("Seeding database for DHA Perfumes...");
 
   await prisma.inspiredByConfig.upsert({
     where: { id: "global" },

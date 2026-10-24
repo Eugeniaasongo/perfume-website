@@ -11,7 +11,7 @@ interface ToastDetail {
   hrefLabel?: string;
 }
 
-const TOAST_EVENT = "ryz:toast";
+const TOAST_EVENT = "dha:toast";
 
 export function showToast(detail: ToastDetail) {
   window.dispatchEvent(new CustomEvent<ToastDetail>(TOAST_EVENT, { detail }));

@@ -12,14 +12,14 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "RYZ Parfums | Long-Lasting Luxury Fragrances in Ghana",
-    template: "%s | RYZ Parfums",
+    default: "DHA Perfumes | Long-Lasting Luxury Fragrances in Ghana",
+    template: "%s | DHA Perfumes",
   },
   description:
     "Ghanaian fragrance house crafting high-concentration Extraits de Parfum inspired by iconic designer and niche scents. Cash on Delivery nationwide.",
   openGraph: {
     type: "website",
-    siteName: "RYZ Parfums",
+    siteName: "DHA Perfumes",
     locale: "en_GH",
   },
 };

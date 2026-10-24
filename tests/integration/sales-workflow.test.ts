@@ -44,7 +44,7 @@ async function paidOnlineOrder(quantity = 1, stock = 10) {
     items: [{ variantId: product.variants[0].id, quantity }],
     isCodOtpVerified: false,
   });
-  await confirmPaystackPayment(order.id, `RYZ-PAY-${order.orderNumber}-${Date.now()}`);
+  await confirmPaystackPayment(order.id, `DHA-PAY-${order.orderNumber}-${Date.now()}`);
   return { order: await prisma.order.findUniqueOrThrow({ where: { id: order.id } }), variantId: product.variants[0].id };
 }
 
@@ -123,7 +123,7 @@ test("returning from Paystack marks the order paid, and a racing webhook doesn't
     items: [{ variantId: product.variants[0].id, quantity: 1 }],
     isCodOtpVerified: false,
   });
-  const reference = `RYZ-PAY-${order.orderNumber}-1`;
+  const reference = `DHA-PAY-${order.orderNumber}-1`;
 
   const results = await Promise.all([
     recordPaystackCharge({ reference, amountPesewas: order.totalPrice, orderId: order.id, source: "PAYSTACK_WEBHOOK" }),
@@ -148,7 +148,7 @@ test("a foreign payment reference can't mark an order paid", async () => {
     items: [{ variantId: product.variants[0].id, quantity: 1 }],
     isCodOtpVerified: false,
   });
-  await confirmPaystackPayment(order.id, "RYZ-PAY-RYZ-OTHER-123");
+  await confirmPaystackPayment(order.id, "DHA-PAY-DHA-OTHER-123");
   assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PENDING_PAYMENT");
 });
 

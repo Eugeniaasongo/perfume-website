@@ -1,6 +1,6 @@
-# RYZ Parfums
+# DHA Perfumes
 
-E-commerce storefront and admin portal for RYZ Parfums — Next.js 15 (App Router), Prisma + PostgreSQL, Tailwind CSS, Paystack and Cash on Delivery with SMS verification.
+E-commerce storefront and admin portal for DHA Perfumes — Next.js 15 (App Router), Prisma + PostgreSQL, Tailwind CSS, Paystack and Cash on Delivery with SMS verification.
 
 ## Local development
 

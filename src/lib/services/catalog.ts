@@ -12,11 +12,12 @@ export interface CatalogQueryFilters {
 export const COLLECTIONS: Record<string, { title: string; category?: string; blurb: string }> = {
   all: {
     title: "All Fragrances",
-    blurb: "Every RYZ extrait, from bright citrus openings to deep oud and amber.",
+    blurb: "Every DHA extrait, from bright citrus openings to deep oud and amber.",
   },
+  // Legacy URL from the old RYZ Parfums name, kept so existing links still work.
   "ryz-parfums": {
     title: "The Signature Collection",
-    blurb: "Every RYZ extrait, from bright citrus openings to deep oud and amber.",
+    blurb: "Every DHA extrait, from bright citrus openings to deep oud and amber.",
   },
   men: {
     title: "For Him",

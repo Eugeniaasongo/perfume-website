@@ -41,7 +41,7 @@ export function BottleArt({
     return (
       <Image
         src={imageUrl}
-        alt={`${title} by RYZ Parfums`}
+        alt={`${title} by DHA Perfumes`}
         fill
         priority={priority}
         sizes={size === "lg" ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 25vw, 50vw"}
@@ -59,7 +59,7 @@ export function BottleArt({
     <svg
       viewBox="0 0 200 260"
       role="img"
-      aria-label={`${title} by RYZ Parfums`}
+      aria-label={`${title} by DHA Perfumes`}
       className="absolute inset-0 m-auto h-[82%] w-auto drop-shadow-[0_18px_24px_rgba(42,24,16,0.18)]"
     >
       <defs>
@@ -86,7 +86,7 @@ export function BottleArt({
       <rect x="54" y="122" width="92" height="84" fill="#FAF7F2" fillOpacity="0.94" />
       <rect x="58" y="126" width="84" height="76" fill="none" stroke="#B8923A" strokeWidth="0.75" />
       <text x="100" y="146" textAnchor="middle" fontSize="13" letterSpacing="4" fill="#B8923A" fontFamily="Georgia, serif">
-        RYZ
+        DHA
       </text>
       {words.slice(0, 2).map((word, i) => (
         <text

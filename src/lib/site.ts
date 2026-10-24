@@ -1,9 +1,9 @@
 export const SITE = {
-  name: "RYZ Parfums",
+  name: "DHA Perfumes",
   tagline: "Long-lasting luxury fragrances, crafted in Ghana",
   phoneDisplay: process.env.NEXT_PUBLIC_SUPPORT_PHONE_DISPLAY || "+233 20 000 0000",
   phoneE164: process.env.NEXT_PUBLIC_SUPPORT_PHONE || "+233200000000",
-  email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@ryzparfums.com",
+  email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@dhaperfumes.com",
   whatsapp: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "233200000000").replace(/\D/g, ""),
 };
 

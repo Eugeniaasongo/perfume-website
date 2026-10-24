@@ -51,7 +51,7 @@ export async function sendPhoneOtp(phone: string): Promise<{ devCode?: string }>
     },
   });
 
-  await sendSms(phone, `Your RYZ Parfums verification code is ${code}. It expires in 10 minutes.`);
+  await sendSms(phone, `Your DHA Perfumes verification code is ${code}. It expires in 10 minutes.`);
 
   return !isProduction && !isSmsConfigured() ? { devCode: code } : {};
 }

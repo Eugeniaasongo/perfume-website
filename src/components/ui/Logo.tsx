@@ -20,17 +20,17 @@ export function Logo({ tone = "dark", className = "" }: { tone?: "dark" | "light
   return (
     <Link
       href="/"
-      aria-label="RYZ Parfums home"
+      aria-label="DHA Perfumes home"
       className={`group inline-flex flex-col items-center leading-none ${className}`}
     >
       <CrownMark className="mb-1 h-3 w-5 text-brand-gold transition-transform duration-300 group-hover:-translate-y-0.5" />
-      <span className="font-display text-[26px] font-semibold tracking-[0.32em] text-brand-gold">RYZ</span>
+      <span className="font-display text-[26px] font-semibold tracking-[0.32em] text-brand-gold">DHA</span>
       <span
-        className={`mt-0.5 text-[8px] font-medium tracking-[0.55em] ${
+        className={`mt-0.5 text-[8px] font-medium tracking-[0.48em] ${
           tone === "dark" ? "text-ink" : "text-ivory/80"
         }`}
       >
-        PARFUMS
+        PERFUMES
       </span>
     </Link>
   );

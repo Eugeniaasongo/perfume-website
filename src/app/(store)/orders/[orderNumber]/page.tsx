@@ -216,7 +216,7 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
             {order.paymentProvider === "CASH_ON_DELIVERY" ? "Cash on Delivery" : "Paid online via Paystack"}
           </p>
           <a
-            href={whatsappLink(`Hi RYZ Parfums, I have a question about order ${order.orderNumber}`)}
+            href={whatsappLink(`Hi DHA Perfumes, I have a question about order ${order.orderNumber}`)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-8 inline-flex items-center gap-2 text-sm text-ink underline-offset-4 hover:underline"

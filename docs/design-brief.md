@@ -1,7 +1,7 @@
-# RYZ Parfums Design Brief & Brand Identity Guidelines
+# DHA Perfumes Design Brief & Brand Identity Guidelines
 
 ## 1. Brand Identity Overview
-RYZ Parfums is a premium Ghanaian fragrance house crafting long-lasting luxury perfumes inspired by iconic designer and niche scents. The brand represents accessible opulence, high longevity, and exceptional quality without the inflated luxury markup.
+DHA Perfumes is a premium Ghanaian fragrance house crafting long-lasting luxury perfumes inspired by iconic designer and niche scents. The brand represents accessible opulence, high longevity, and exceptional quality without the inflated luxury markup.
 
 ## 2. Color Palette & Contrast Tokens
 
@@ -31,11 +31,11 @@ RYZ Parfums is a premium Ghanaian fragrance house crafting long-lasting luxury p
 
 ### Header & Navigation
 - Top thin black utility bar containing contact info, WhatsApp link, and compact search.
-- Centered RYZ logo featuring gold crown and spaced gold "RYZ" wordmark over "P A R F U M S".
+- Centered DHA logo featuring gold crown and spaced gold "DHA" wordmark over "P E R F U M E S".
 - Prominent **"CASH ON DELIVERY ACCEPTED"** trust message badge rendered on all pages including cart, drawer, and checkout.
 
 ### Signature Product Card
-- Side-by-side bottle representation: Large RYZ clear glass bottle with gold cap on the left, smaller inspiration bottle photo on the right.
+- Side-by-side bottle representation: Large DHA clear glass bottle with gold cap on the left, smaller inspiration bottle photo on the right.
 - Distinct red uppercase `"INSPIRED BY"` label followed by designer and scent name.
 - Clear multi-line hierarchy separating brand, product title, concentration, size, and price ("From GHS 299.00" with gold accent line).
 - Interactive quick-add, size chips, wishlist heart toggle, and second hover image.

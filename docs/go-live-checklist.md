@@ -1,4 +1,4 @@
-# RYZ Parfums Go-Live Checklist
+# DHA Perfumes Go-Live Checklist
 
 ## Configuration
 - [ ] Production PostgreSQL provisioned; `DATABASE_URL` set
@@ -23,5 +23,5 @@
 
 ## Legal
 - [ ] Trademark review of comparative "Inspired by" wording
-- [ ] Only proprietary RYZ photography uploaded
+- [ ] Only proprietary DHA photography uploaded
 - [ ] Privacy notice reviewed against the Data Protection Act, 2012 (Act 843)
