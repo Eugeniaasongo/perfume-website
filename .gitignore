@@ -9,3 +9,6 @@ coverage
 .env.local
 prisma/*.db
 prisma/*.db-journal
+!.env.example
+.env*.local
+*.tsbuildinfo

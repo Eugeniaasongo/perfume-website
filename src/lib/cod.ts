@@ -1,27 +1,5 @@
 import { prisma } from "@/lib/prisma";
-
-const activeOtps = new Map<string, string>();
-
-export async function sendPhoneOtp(phone: string): Promise<{ success: boolean; otp: string }> {
-  const formattedPhone = phone.trim().replace(/\s+/g, "");
-
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  activeOtps.set(formattedPhone, otp);
-
-  console.log(`[OTP Service] Sent OTP ${otp} to phone ${formattedPhone}`);
-  return { success: true, otp };
-}
-
-export async function verifyPhoneOtp(phone: string, otp: string): Promise<boolean> {
-  const formattedPhone = phone.trim().replace(/\s+/g, "");
-  const expectedOtp = activeOtps.get(formattedPhone);
-
-  if (expectedOtp && expectedOtp === otp) {
-    activeOtps.delete(formattedPhone);
-    return true;
-  }
-  return false;
-}
+import { transitionOrderStateTx, type OrderState } from "@/lib/orders/state-machine";
 
 export async function recordCodCashCollection(input: {
   orderId: string;
@@ -29,18 +7,19 @@ export async function recordCodCashCollection(input: {
   collectorName: string;
   notes?: string;
 }) {
-  const order = await prisma.order.findUnique({
-    where: { id: input.orderId },
-  });
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id: input.orderId } });
 
-  if (!order) {
-    throw new Error(`Order ${input.orderId} not found`);
-  }
+    if (!order) {
+      throw new Error(`Order ${input.orderId} not found`);
+    }
+    if (order.paymentProvider !== "CASH_ON_DELIVERY") {
+      throw new Error("Cash collection can only be recorded for Cash on Delivery orders");
+    }
 
-  const isAmountMatch = order.totalPrice === input.collectedAmountPesewas;
+    const isAmountMatch = order.totalPrice === input.collectedAmountPesewas;
 
-  const result = await prisma.$transaction([
-    prisma.codReconciliationLog.create({
+    const log = await tx.codReconciliationLog.create({
       data: {
         orderId: order.id,
         collectedAmount: input.collectedAmountPesewas,
@@ -48,14 +27,20 @@ export async function recordCodCashCollection(input: {
         isReconciled: isAmountMatch,
         notes: input.notes || (isAmountMatch ? "Full cash collected" : "Amount discrepancy flagged"),
       },
-    }),
-    prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: isAmountMatch ? "DELIVERED" : "ON_HOLD",
-      },
-    }),
-  ]);
+    });
 
-  return result;
+    const targetState: OrderState = isAmountMatch ? "DELIVERED" : "ON_HOLD";
+    if (order.status !== targetState) {
+      await transitionOrderStateTx(tx, {
+        orderId: order.id,
+        targetState,
+        actor: input.collectorName,
+        notes: isAmountMatch
+          ? "COD cash collected in full"
+          : `COD discrepancy: expected ${order.totalPrice}, collected ${input.collectedAmountPesewas} pesewas`,
+      });
+    }
+
+    return log;
+  });
 }

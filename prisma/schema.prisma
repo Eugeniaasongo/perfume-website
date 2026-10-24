@@ -1,6 +1,6 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -12,13 +12,14 @@ model Product {
   slug            String           @unique
   title           String
   description     String
-  category        String           // Men, Women, Unisex, Makeup, RYZ Parfums
+  category        String           // Men, Women, Unisex
   concentration   String           // Extrait de Parfum, EDP, EDT
   topNotes        String           // Comma separated string
   heartNotes      String
   baseNotes       String
   longevityRating Int              @default(5) // 1-5 scale
   sillageRating   Int              @default(5) // 1-5 scale
+  imageUrl        String?          // Optional product photography; a rendered bottle is shown when empty
 
   // Inspired By optional metadata
   inspiredHouse   String?
@@ -27,11 +28,14 @@ model Product {
   inspiredEnabled Boolean          @default(true)
 
   isFeatured      Boolean          @default(false)
+  isActive        Boolean          @default(true)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   variants        ProductVariant[]
   reviews         Review[]
+
+  @@index([category])
 }
 
 model ProductVariant {
@@ -48,6 +52,8 @@ model ProductVariant {
 
   orderItems     OrderItem[]
   reservations   StockReservation[]
+
+  @@index([productId])
 }
 
 model InspiredByConfig {
@@ -75,9 +81,11 @@ model Order {
   itemsPrice      Int                // Pesewas
   shippingPrice   Int                // Pesewas
   discountPrice   Int                @default(0) // Pesewas
+  discountCode    String?
   totalPrice      Int                // Pesewas
 
   isCodOtpVerified Boolean           @default(false)
+  stockReleased   Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -85,6 +93,10 @@ model Order {
   paymentLedgers  PaymentLedger[]
   codLogs         CodReconciliationLog[]
   auditLogs       AuditLog[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerPhone])
 }
 
 model OrderItem {
@@ -96,6 +108,8 @@ model OrderItem {
   quantity         Int
   unitPricePesewas Int
   totalPesewas     Int
+
+  @@index([orderId])
 }
 
 model StockReservation {
@@ -122,6 +136,8 @@ model PaymentLedger {
   hmacSignature   String?
   metadataJson    String?
   createdAt       DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model CodReconciliationLog {
@@ -133,6 +149,20 @@ model CodReconciliationLog {
   collectedAt     DateTime @default(now())
   isReconciled    Boolean  @default(true)
   notes           String?
+
+  @@index([orderId])
+}
+
+model PhoneOtp {
+  id         String    @id @default(uuid())
+  phone      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
 }
 
 model Customer {
@@ -166,6 +196,8 @@ model AuditLog {
   action    String
   details   String?
   createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model Review {

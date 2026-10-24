@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npx prisma db push && npx prisma db seed && next build",
-  "devCommand": "next dev",
-  "installCommand": "npm install"
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm ci",
+  "crons": [{ "path": "/api/cron/expire-orders", "schedule": "0 3 * * *" }]
 }

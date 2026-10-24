@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
-import { sendPhoneOtp } from "@/lib/cod";
+import { sendPhoneOtp, OtpError } from "@/lib/otp";
+import { phoneInputSchema } from "@/lib/orders/checkout";
+import { jsonError, readJson, zodErrorResponse } from "@/lib/api";
 
 export async function POST(request: Request) {
-  try {
-    const { phone } = await request.json();
-    if (!phone) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-    }
+  const parsed = phoneInputSchema.safeParse(await readJson(request));
+  if (!parsed.success) return zodErrorResponse(parsed.error);
 
-    const result = await sendPhoneOtp(phone);
-    return NextResponse.json({ success: true, otp: result.otp });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to send OTP" }, { status: 500 });
+  try {
+    const { devCode } = await sendPhoneOtp(parsed.data.phone);
+    return NextResponse.json({ success: true, devCode });
+  } catch (error) {
+    if (error instanceof OtpError) return jsonError(error.message, error.status);
+    console.error("OTP send error:", error);
+    return jsonError("We couldn't send a verification code right now. Please try again shortly.", 503);
   }
 }

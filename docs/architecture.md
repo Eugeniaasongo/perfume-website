@@ -1,19 +1,18 @@
 # RYZ Parfums Architecture Overview
 
-## 1. System Architecture
-RYZ Parfums is an e-commerce platform built on Next.js App Router (TypeScript strict mode) with Tailwind CSS styling and SQLite/PostgreSQL database managed by Prisma ORM.
+Next.js App Router (TypeScript strict) + Tailwind CSS, PostgreSQL via Prisma.
 
 ```
-[ Frontend: Next.js App Router ]
-       │
-       ├──> Catalog & Search Engine (Postgres full-text / SQLite contains)
-       ├──> Payment Engine (Paystack API + Webhook HMAC Verification)
-       ├──> Cash on Delivery (COD) Engine + Phone OTP Verification
-       └──> Order State Machine + Audit Ledger
+src/app/(store)/        Storefront: home, collections, product, search, cart, checkout, tracking, order status
+src/app/admin/          Admin portal (password + signed session cookie, protected by src/middleware.ts)
+src/app/api/            checkout, checkout/quote, checkout/otp, webhooks/paystack, cron/expire-orders, search
 ```
 
-## 2. Key Modules
-- **`src/lib/pricing.ts`**: Regional shipping rates and discount code calculations working strictly in integer pesewas.
-- **`src/lib/payments/paystack.ts`**: Paystack payment provider implementation and HMAC sha512 webhook handler.
-- **`src/lib/cod.ts`**: Phone OTP generation and COD cash collection reconciliation ledger.
-- **`src/lib/orders/state-machine.ts`**: Strictly enforced order state transition machine with audit logging.
+## Key modules
+- `src/lib/orders/checkout.ts` — input validation (zod), server-side pricing (`quoteCart`), atomic order creation. Stock is reserved with conditional decrements so concurrent checkouts can never oversell.
+- `src/lib/orders/state-machine.ts` — allowed status transitions, audit log, stock release on cancellation/failed payment/return, expiry of unpaid orders.
+- `src/lib/otp.ts` + `src/lib/notifications/sms.ts` — hashed, expiring, single-use phone codes with resend cooldown and attempt limits; SMS via Arkesel.
+- `src/lib/payments/paystack.ts` — Paystack initialization and webhook processing (constant-time HMAC check, idempotent ledger, amount verification).
+- `src/lib/cod.ts` — rider cash collection and reconciliation.
+- `src/lib/auth/session.ts` — HMAC-signed admin session tokens (Web Crypto, works in middleware and Node).
+- `src/lib/services/catalog.ts` — catalog queries and the runtime "Inspired by" configuration.
